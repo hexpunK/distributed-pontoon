@@ -1,5 +1,6 @@
 package distributedpontoon.shared;
 
+import java.io.Serializable;
 import java.util.ArrayList;
 
 /**
@@ -10,7 +11,7 @@ import java.util.ArrayList;
  * @version 1.0
  * @since 2015-02-03
  */
-public class Hand
+public class Hand implements Serializable
 {
     /** The {@link Card}s held in this Hand. */
     private final ArrayList<Card> cards;

@@ -23,7 +23,7 @@ public class Card implements Serializable
      * @version 1.0
      * @since 2015-02-03
      */
-    public static enum CardRank
+    public static enum CardRank implements Serializable
     {
         ACE(1),
         TWO(2),
@@ -55,7 +55,7 @@ public class Card implements Serializable
      * @version 1.0
      * @since 2015-02-03
      */
-    public static enum CardSuit
+    public static enum CardSuit implements Serializable
     {
         DIAMONDS,
         HEARTS,

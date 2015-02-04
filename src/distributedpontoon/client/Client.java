@@ -11,8 +11,7 @@ import java.util.Random;
  * @author 6266215
  */
 public class Client
-{
-    
+{    
     public static void main(String[] args)
     {
         Deck d = new Deck();
