@@ -13,7 +13,7 @@ public class HumanPlayer implements IPlayer
     @Override
     public void reigsterGame() 
     {
-        game = new Game(this);
+        game = new Game(this, 50);
     }
 
     @Override

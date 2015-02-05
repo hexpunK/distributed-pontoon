@@ -1,8 +1,3 @@
-/*
- * To change this license header, choose License Headers in Project Properties.
- * To change this template file, choose Tools | Templates
- * and open the template in the editor.
- */
 package distributedpontoon.client;
 
 import distributedpontoon.shared.Card;
@@ -28,32 +23,36 @@ public class Game implements IClientGame
     private Socket connection;
     private final Hand hand;
     private final IPlayer player;
+    private int bet;
     
-    public Game(IPlayer player)
+    public Game(IPlayer player, int bet)
     {
         this.port = 50000;
         this.serverName = "UNCONNECTED";
         this.connection = null;
         this.hand = new Hand();
         this.player = player;
+        this.bet = bet;
     }
     
-    public Game(IPlayer player, String hostName)
+    public Game(IPlayer player, int bet, String hostName)
     {
         this.port = 50000;
         this.serverName = hostName;
         this.connection = null;
         this.hand = new Hand();
         this.player = player;
+        this.bet = bet;
     }
     
-    public Game(IPlayer player, String hostName, int port)
+    public Game(IPlayer player, int bet, String hostName, int port)
     {
         this.port = port;
         this.serverName = hostName;
         this.connection = null;
         this.hand = new Hand();
         this.player = player;
+        this.bet = bet;
     }
     
     @Override
@@ -97,19 +96,38 @@ public class Game implements IClientGame
     public void twist()
     {
         ObjectOutputStream output = null;
+        ObjectInputStream input = null;
         
         try {
             output = new ObjectOutputStream(connection.getOutputStream());
-            NetMessage<Character> msg 
+            input = new ObjectInputStream(connection.getInputStream());
+            NetMessage<?> msg 
                     = new NetMessage<>(MessageType.TURN_RESPONSE, 't');
             output.writeObject(msg);
             output.flush();
+            
+            msg = (NetMessage)input.readObject();
+            if (msg.Type != MessageType.CARD_TRANSFER) {
+                System.err.println("ERROR");
+                return;
+            }
+            Card c = (Card) msg.Contents;
+            hand.addCard(c);
         } catch (IOException ioEx) {
             System.err.println(ioEx.getMessage());
+        } catch (ClassNotFoundException ex) {
+            System.err.println(ex.getMessage());
         } finally {
             if (output != null) {
                 try {
                     output.close();
+                } catch (IOException innerIOEx) {
+                    System.err.println(innerIOEx.getMessage());
+                }
+            }
+            if (input != null) {
+                try {
+                    input.close();
                 } catch (IOException innerIOEx) {
                     System.err.println(innerIOEx.getMessage());
                 }
@@ -124,12 +142,20 @@ public class Game implements IClientGame
         
         try {
             output = new ObjectOutputStream(connection.getOutputStream());
+            
             NetMessage<Character> msg 
                     = new NetMessage<>(MessageType.TURN_RESPONSE, 's');
+            Card[] cards = new Card[hand.size()];
+            cards = hand.getCards().toArray(cards);
+            NetMessage<Card[]> cardMsg 
+                    = new NetMessage<>(MessageType.TURN_RESPONSE, cards);
+            NetMessage<Integer> pointMsg 
+                    = new NetMessage<>(MessageType.TURN_RESPONSE, hand.total());
             output.writeObject(msg);
+            output.writeObject(cardMsg);
             output.flush();
-        } catch (IOException ioEx) {
-            System.err.println(ioEx.getMessage());
+        } catch (IOException ex) {
+            System.err.println(ex.getMessage());
         } finally {
             if (output != null) {
                 try {
@@ -151,33 +177,6 @@ public class Game implements IClientGame
             NetMessage<Character> msg 
                     = new NetMessage<>(MessageType.TURN_RESPONSE, 'b');
             output.writeObject(msg);
-            output.flush();
-        } catch (IOException ioEx) {
-            System.err.println(ioEx.getMessage());
-        } finally {
-            if (output != null) {
-                try {
-                    output.close();
-                } catch (IOException innerIOEx) {
-                    System.err.println(innerIOEx.getMessage());
-                }
-            }
-        }
-    }
-    
-    @Override
-    public void showHand()
-    {
-        ObjectOutputStream output = null;
-        
-        try {
-            output = new ObjectOutputStream(connection.getOutputStream());
-            Card[] cards = new Card[hand.size()];
-            cards = hand.getCards().toArray(cards);
-            NetMessage<Card[]> msg 
-                    = new NetMessage<>(MessageType.HAND_TRANSFER, cards);
-            output.writeObject(msg);
-            output.writeInt(hand.total());
             output.flush();
         } catch (IOException ioEx) {
             System.err.println(ioEx.getMessage());
@@ -216,21 +215,15 @@ public class Game implements IClientGame
                     case CARD_TRANSFER:
                         Card card = (Card)msg.Contents;
                         hand.addCard(card);
-                        ObjectOutputStream output = null;
-        
-                        try {
-                            output = new ObjectOutputStream(connection.getOutputStream());
-                            NetMessage<Integer> response 
-                                = new NetMessage<>(MessageType.CARD_TRANSFER, 
-                                        hand.size());
-                        } catch (IOException innerIOEx) {
-                            System.err.println("");
-                        }
                         break;
                     case TURN_NOTIFY:
                         player.play(this);
                         break;
                     case GAME_RESULT:
+                        if ((Boolean)msg.Contents)
+                            player.adjustBalance(bet);
+                        else
+                            player.adjustBalance(-bet);
                         disconnect();
                         break;
                     default:

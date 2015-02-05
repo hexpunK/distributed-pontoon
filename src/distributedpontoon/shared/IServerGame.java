@@ -4,6 +4,6 @@ package distributedpontoon.shared;
  *
  * @author Jordan
  */
-public interface IServerGame {
+public interface IServerGame extends Runnable {
     
 }

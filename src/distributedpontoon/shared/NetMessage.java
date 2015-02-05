@@ -14,7 +14,6 @@ public class NetMessage<T> implements Serializable {
         TURN_NOTIFY,
         TURN_RESPONSE,
         CARD_TRANSFER,
-        HAND_TRANSFER,
         GAME_RESULT;
     }
     

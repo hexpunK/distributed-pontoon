@@ -7,6 +7,7 @@ package distributedpontoon.client;
 
 import distributedpontoon.shared.Card;
 import distributedpontoon.shared.Hand;
+import distributedpontoon.stubs.StubbedPlayer;
 import distributedpontoon.stubs.StubbedServer;
 import org.junit.After;
 import org.junit.AfterClass;
@@ -21,31 +22,37 @@ import org.junit.BeforeClass;
  */
 public class GameTest {
     
-    static StubbedServer server;
-    static Thread serverThread;
-    static Game instance;
+    private static StubbedServer server;
+    private Game instance;
+    private StubbedPlayer player;
     
     @BeforeClass
-    public static void beforeTest() {
+    public static void beforeClass() {
         System.out.println("Setting up GameTest...");
         server = new StubbedServer();
-        serverThread = new Thread(server);
-        serverThread.start();
-        
-        instance = new Game(null, "localhost", 50000);
+        server.init();
+        System.out.println("\tStubbedServer running.");
+    }
+    
+    @Before
+    public void beforeTest() {
+        player = new StubbedPlayer();
+        instance = new Game(player, 50, "localhost", 50000);
         boolean expResult = true;
         boolean result = instance.connect();
         assertEquals(expResult, result);
-        System.out.println("\tConnected to the stubbed server.");
+    }
+    
+    @After
+    public void afterTest() {
+        instance.disconnect();
     }
     
     @AfterClass
-    public static void afterTest() throws InterruptedException {
+    public static void afterClass() throws InterruptedException {
         System.out.println("Tearing down GameTest...");
-        instance.disconnect();
-        System.out.println("\tGame disconnected from stubbed server.");
         server.kill();
-        serverThread.join();
+        System.out.println("\tServer terminated.");
     }
 
     /**
@@ -60,6 +67,10 @@ public class GameTest {
         assertEquals(0, result.size());
         System.out.println("\tSuccess! Fresh hand is empty.");
         expResult.addCard(new Card(Card.CardSuit.CLUBS, Card.CardRank.ACE));
+        assertEquals(1, expResult.size());
+        System.out.println("\tSuccess! Adding a card changed the hand.");
+        assertEquals(0, instance.getHand().size());
+        System.out.println("\tSuccess! Players hand did not change.");
     }
 
     /**
@@ -80,9 +91,12 @@ public class GameTest {
     @Test
     public void testTwist() {
         System.out.println("Testing: twist");
+        Hand hOld = instance.getHand();
+        assertEquals(0, hOld.size());
         instance.twist();
-        // TODO review the generated test code and remove the default call to fail.
-        fail("The test case is a prototype.");
+        Hand hNew = instance.getHand();
+        assertEquals(1, hNew.size());
+        System.out.println("\tSuccess! Twisting added a card.");
     }
 
     /**
@@ -91,9 +105,18 @@ public class GameTest {
     @Test
     public void testStand() {
         System.out.println("Testing: stand");
+        Hand hOld = instance.getHand();
+        int oldBal = player.getBalance();
+        assertEquals(0, hOld.size());
+        assertEquals(500, oldBal);
         instance.stand();
-        // TODO review the generated test code and remove the default call to fail.
-        fail("The test case is a prototype.");
+        Hand hNew = instance.getHand();
+        int newBal = player.getBalance();
+        assertEquals(0, hNew.size());
+        System.out.println("\tSuccess! Standing did not change the hand.");
+        assertEquals(500, newBal);
+        assertEquals(oldBal, newBal);
+        System.out.println("\tSuccess! Standing did not change the balance.");
     }
 
     /**
@@ -102,19 +125,12 @@ public class GameTest {
     @Test
     public void testBust() {
         System.out.println("Testing: bust");
+        int oldBal = player.getBalance();
+        assertTrue("Old balance isn't 500.", 500 == oldBal);
         instance.bust();
-        // TODO review the generated test code and remove the default call to fail.
-        fail("The test case is a prototype.");
+        int newBal = player.getBalance();
+        assertFalse("New balance is still 500.", 500 == newBal);
+        assertTrue("New balance is not lower than old.", oldBal > newBal);
+        System.out.println("\tSuccess! Busting did change the balance.");
     }
-
-    /**
-     * Test of showHand method, of class Game.
-     */
-    @Test
-    public void testShowHand() {
-        System.out.println("Testing: showHand");
-        instance.showHand();
-        // TODO review the generated test code and remove the default call to fail.
-        fail("The test case is a prototype.");
-    }    
 }

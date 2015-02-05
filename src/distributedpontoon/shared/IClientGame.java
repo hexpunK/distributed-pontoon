@@ -19,6 +19,4 @@ public interface IClientGame extends Runnable {
     public void stand();
     
     public void bust();
-    
-    public void showHand();
 }

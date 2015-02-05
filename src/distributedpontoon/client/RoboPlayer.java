@@ -29,7 +29,7 @@ public class RoboPlayer implements IPlayer
     @Override
     public void reigsterGame()
     {
-        Game newGame = new Game(this);
+        Game newGame = new Game(this, 50);
         Thread gameThread = new Thread(newGame);
         games.put(newGame, gameThread);
     }
