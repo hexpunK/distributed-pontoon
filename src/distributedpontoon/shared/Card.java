@@ -82,7 +82,6 @@ public class Card implements Serializable
                 count++;
             }
         }
-        System.out.printf("Created %d cards.\n", count);
         if (count < 52) {
             // Ensure a full set of cards.
             System.err.println("Failed to create all 52 cards!");

@@ -24,6 +24,7 @@ public class GameTest {
     
     private static StubbedServer server;
     private Game instance;
+    private Thread gameThread;
     private StubbedPlayer player;
     
     @BeforeClass
@@ -38,14 +39,17 @@ public class GameTest {
     public void beforeTest() {
         player = new StubbedPlayer();
         instance = new Game(player, 50, "localhost", 50000);
+        gameThread = new Thread(instance);
+        gameThread.start();
         boolean expResult = true;
         boolean result = instance.connect();
         assertEquals(expResult, result);
     }
     
     @After
-    public void afterTest() {
+    public void afterTest() throws InterruptedException {
         instance.disconnect();
+        gameThread.join();
     }
     
     @AfterClass

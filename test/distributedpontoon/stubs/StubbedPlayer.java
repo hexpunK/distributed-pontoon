@@ -17,7 +17,7 @@ public class StubbedPlayer implements IPlayer {
     }
     
     @Override
-    public void reigsterGame() { }
+    public void reigsterGame(Game game) { }
 
     @Override
     public void startGame() { }
@@ -38,4 +38,6 @@ public class StubbedPlayer implements IPlayer {
     @Override
     public int getBalance() { return 500; }
     
+    @Override
+    public void leaveGame(Game game) { }
 }

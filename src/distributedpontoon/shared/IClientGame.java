@@ -2,21 +2,26 @@ package distributedpontoon.shared;
 
 /**
  *
- * @author Jordan
+ * @author 6266215
  */
-public interface IClientGame extends Runnable {
+public abstract class IClientGame extends IGame {
     
-    public Hand getHand();
+    public abstract void setBet(int bet) throws IllegalArgumentException;
     
-    public boolean isConnected();
+    public abstract Hand getHand();
     
-    public boolean connect();
+    public abstract boolean isConnected();
     
-    public void disconnect();
+    public abstract boolean connect();
     
-    public void twist();
+    public abstract void disconnect();
     
-    public void stand();
+    public abstract void twist();
     
-    public void bust();
+    public abstract void stand();
+    
+    public abstract void bust();
+    
+    @Override
+    public abstract void run();
 }
