@@ -1,5 +1,6 @@
 package distributedpontoon.client;
 
+import distributedpontoon.shared.IClientGame;
 import distributedpontoon.shared.NetMessage.MessageType;
 import java.util.InputMismatchException;
 import java.util.Scanner;
@@ -15,7 +16,7 @@ import java.util.Scanner;
 public class CLIPlayer extends HumanPlayer 
 {
     /** Reads the standard input to get the players moves. */
-    private Scanner input;
+    private final Scanner input;
     
     /**
      * Creates a new {@link CLIPlayer} and sets the input reader up.
@@ -35,12 +36,12 @@ public class CLIPlayer extends HumanPlayer
      * message back to the server will allow the user to input another once 
      * complete.
      * 
-     * @param caller The {@link Game} instance that has asked for the players 
-     * move.
+     * @param caller The {@link IClientGame} instance that has asked for the 
+     * players move.
      * @since 1.0
      */
     @Override
-    public void play(Game caller)
+    public void play(IClientGame caller)
     {
         System.out.println("Please enter your move...");
         String move = input.nextLine();
@@ -66,8 +67,6 @@ public class CLIPlayer extends HumanPlayer
                     System.out.println("Bet changed!");
                 } catch (InputMismatchException inEx) {
                     System.err.println("You must enter a number. Bet unchanged.");
-                } catch (IllegalArgumentException argEx) {
-                    System.err.println(argEx.getMessage());
                 }
                 play(caller);
                 break;
@@ -82,23 +81,44 @@ public class CLIPlayer extends HumanPlayer
                 break;
             case "help":
             default:
-                StringBuilder sb = new StringBuilder();
-                sb.append("Pontoon CLI Help:\n");
-                sb.append("\tCommand (Short)\t-\tAction\n");
-                sb.append("\tstick (s)\t-\tTells the dealer you don't want any more cards this round.\n");
-                sb.append("\ttwist (t)\t-\tRequests another card from the dealer.\n");
-                sb.append("\tbet (b)\t-\tAdjusts the bet for this hand by the specified amount.\n");
-                sb.append("\thand (t)\t-\tDisplays the cards in your hand and their total point value.\n");
-                sb.append("\tquit (q)\t-\tExits the current game.");
-                System.out.println(sb.toString());
+                System.out.println(helpMessage());
                 play(caller);
         }
     }
 
+    /**
+     * Prints out the contents and total point value of the current {@link Hand}
+     *  for this {@link CLIPlayer} to the standard output.
+     * 
+     *  @since 1.0
+     */
     @Override
     public void viewHand()
     {
         System.out.println("Your hand:");
         System.out.println(game.getHand());
+    }
+    
+    /**
+     * Creates a help message to be displayed when this {@link CLIPlayer} asks 
+     * for help during a game.
+     * 
+     * @return The help message as a String.
+     */
+    private String helpMessage()
+    {
+        StringBuilder sb = new StringBuilder();
+        sb.append("Pontoon Client CLI Help:\n");
+        sb.append("\tCommand (Short) - Action\n");
+        sb.append("\tstick (s) - Tells the dealer you don't want any more cards"
+                + " this round.\n");
+        sb.append("\ttwist (t) - Requests another card from the dealer.\n");
+        sb.append("\tbet (b) - Adjusts the bet for this hand by the specified "
+                + "amount.\n");
+        sb.append("\thand (h) - Displays the cards in your hand and their total"
+                + " point value.\n");
+        sb.append("\tquit (q) - Exits the current game.");
+        
+        return sb.toString();
     }
 }

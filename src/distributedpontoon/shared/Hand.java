@@ -13,6 +13,8 @@ import java.util.ArrayList;
  */
 public class Hand implements Serializable
 {
+    /** Serialisation ID. */
+    private static final long serialVersionUID = 1L;
     /** The {@link Card}s held in this Hand. */
     private final ArrayList<Card> cards;
 

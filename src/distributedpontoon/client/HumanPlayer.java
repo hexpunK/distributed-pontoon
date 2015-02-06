@@ -1,5 +1,6 @@
 package distributedpontoon.client;
 
+import distributedpontoon.shared.IClientGame;
 import distributedpontoon.shared.NetMessage.MessageType;
 
 /**
@@ -17,7 +18,7 @@ public abstract class HumanPlayer implements IPlayer
     protected int balance;
     /** The game this player is involved in. Human players can only play one
      game at a time. */
-    protected Game game;
+    protected IClientGame game;
     /** A thread to run the game in to avoid locking up whilst the player 
      takes their turn. */
     protected Thread gameThread;
@@ -37,12 +38,12 @@ public abstract class HumanPlayer implements IPlayer
      * instance provided has no impact on this as a {@link HumanPlayer} can only
      *  be playing one game at a time.
      * 
-     * @param game The {@link Game} that called this method.
+     * @param game The {@link IClientGame} that called this method.
      * @param id The unique ID as an int.
      * @since 1.0
      */
     @Override
-    public void setPlayerID(Game game, int id)
+    public void setPlayerID(IClientGame game, int id)
     {
         this.playerID = id;
     }
@@ -51,12 +52,12 @@ public abstract class HumanPlayer implements IPlayer
      * Assigns a game to this {@link HumanPlayer}, the game must not have 
      * started yet.
      * 
-     * @param game The new {@link Game} for this {@link HumanPlayer} to take 
-     * part in.
+     * @param game The new {@link IClientGame} for this {@link HumanPlayer} to 
+     * take part in.
      * @since 1.0
      */
     @Override
-    public void reigsterGame(Game game) 
+    public void reigsterGame(IClientGame game) 
     {
         this.game = game;
     }
@@ -74,6 +75,7 @@ public abstract class HumanPlayer implements IPlayer
         
         gameThread = new Thread(game);
         gameThread.start();
+        this.balance -= game.getBet(); // Remove the players bet.
     }
 
     /**
@@ -81,11 +83,11 @@ public abstract class HumanPlayer implements IPlayer
      * MessageType#TURN_NOTIFY} message, what happens in this method is up to 
      * the specific implementations of this class.
      * 
-     * @param caller The {@link Game} that triggered this method call.
+     * @param caller The {@link IClientGame} that triggered this method call.
      * @since 1.0
      */
     @Override
-    public abstract void play(Game caller);
+    public abstract void play(IClientGame caller);
     
     /**
      * Sets the amount of credits this {@link HumanPlayer} has to bet with.
@@ -137,15 +139,15 @@ public abstract class HumanPlayer implements IPlayer
      * Disconnects this {@link HumanPlayer} from the specified {@link Game} 
      * safely.
      * 
-     * @param game The {@link Game} to stop taking part in.
+     * @param game The {@link IClientGame} to stop taking part in.
      * @since 1.0
      */
     @Override
-    public void leaveGame(Game game)
+    public void leaveGame(IClientGame game)
     {
         this.game.disconnect();
         try {
-            gameThread.join(5000);
+            gameThread.join();
         } catch (InterruptedException ex) {
             System.out.println(ex.getMessage());
         }

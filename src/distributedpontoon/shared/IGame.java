@@ -1,13 +1,8 @@
-/*
- * To change this license header, choose License Headers in Project Properties.
- * To change this template file, choose Tools | Templates
- * and open the template in the editor.
- */
 package distributedpontoon.shared;
 
 /**
  *
- * @author Jordan
+ * @author 6266215
  */
 public abstract class IGame implements Runnable {
     
@@ -25,7 +20,4 @@ public abstract class IGame implements Runnable {
         msg = String.format(msg, args);
         System.err.printf("GAME %d: %s\n", gameID, msg);
     }
-
-    @Override
-    public abstract void run();
 }

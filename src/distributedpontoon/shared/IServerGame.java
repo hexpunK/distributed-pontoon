@@ -28,7 +28,4 @@ public abstract class IServerGame extends IGame {
     public abstract void checkHand(int playerID, Hand h) throws IOException;
     
     public abstract void stop();
-    
-    @Override
-    public abstract void run();
 }

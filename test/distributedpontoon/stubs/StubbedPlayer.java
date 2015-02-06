@@ -2,6 +2,7 @@ package distributedpontoon.stubs;
 
 import distributedpontoon.client.Game;
 import distributedpontoon.client.IPlayer;
+import distributedpontoon.shared.IClientGame;
 
 /**
  *
@@ -17,13 +18,13 @@ public class StubbedPlayer implements IPlayer {
     }
     
     @Override
-    public void reigsterGame(Game game) { }
+    public void reigsterGame(IClientGame game) { }
 
     @Override
     public void startGame() { }
 
     @Override
-    public void play(Game caller) { }
+    public void play(IClientGame caller) { }
 
     @Override
     public void setBalance(int bal) { this.balance = 500; }
@@ -39,5 +40,8 @@ public class StubbedPlayer implements IPlayer {
     public int getBalance() { return 500; }
     
     @Override
-    public void leaveGame(Game game) { }
+    public void leaveGame(IClientGame game) { }
+
+    @Override
+    public void setPlayerID(IClientGame game, int id) { }
 }

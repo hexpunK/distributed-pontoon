@@ -1,5 +1,6 @@
 package distributedpontoon.client;
 
+import distributedpontoon.shared.IClientGame;
 import java.util.HashMap;
 import java.util.Random;
 
@@ -9,11 +10,11 @@ import java.util.Random;
  */
 public class RoboPlayer implements IPlayer
 {
+    private final int threshold;
+    private final Random randomiser;
+    private final HashMap<IClientGame, Thread> games;
+    private final HashMap<IClientGame, Integer> playerIDs;
     private int balance;
-    private int threshold;
-    private Random randomiser;
-    private HashMap<Game, Thread> games;
-    private HashMap<Game, Integer> playerIDs;
     
     public RoboPlayer()
     {
@@ -24,14 +25,14 @@ public class RoboPlayer implements IPlayer
     }
 
     @Override
-    public void setPlayerID(Game game, int id)
+    public void setPlayerID(IClientGame game, int id)
     {
         if (playerIDs.containsKey(game))
             playerIDs.put(game, id);
     }
     
     @Override
-    public void reigsterGame(Game game)
+    public void reigsterGame(IClientGame game)
     {
         Thread gameThread = new Thread(game);
         games.put(game, gameThread);
@@ -40,7 +41,7 @@ public class RoboPlayer implements IPlayer
     @Override
     public void startGame()
     {
-        for (Game g : games.keySet())
+        for (IClientGame g : games.keySet())
         {
             Thread t = games.get(g);
             t.start();
@@ -48,7 +49,7 @@ public class RoboPlayer implements IPlayer
     }
 
     @Override
-    public void play(Game game)
+    public void play(IClientGame game)
     {
         throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
     }    
@@ -64,13 +65,10 @@ public class RoboPlayer implements IPlayer
     }
 
     @Override
-    public int getBalance()
-    {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
-    }
+    public int getBalance() { return balance; }
     
     @Override
-    public void leaveGame(Game game)
+    public void leaveGame(IClientGame game)
     {
         game.disconnect();
         try {

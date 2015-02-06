@@ -8,6 +8,8 @@ public abstract class IClientGame extends IGame {
     
     public abstract void setBet(int bet) throws IllegalArgumentException;
     
+    public abstract int getBet();
+    
     public abstract Hand getHand();
     
     public abstract boolean isConnected();
@@ -21,7 +23,4 @@ public abstract class IClientGame extends IGame {
     public abstract void stand();
     
     public abstract void bust();
-    
-    @Override
-    public abstract void run();
 }

@@ -1,5 +1,6 @@
 package distributedpontoon.client;
 
+import distributedpontoon.shared.IClientGame;
 import distributedpontoon.shared.NetMessage.MessageType;
 
 /**
@@ -16,20 +17,20 @@ public interface IPlayer
      * Sets the ID this {@link IPlayer} will use to identify themselves to 
      * a specific game.
      * 
-     * @param game The {@link Game} this ID is tied to.
+     * @param game The {@link IClientGame} this ID is tied to.
      * @param id The unique ID for the game as an int.
      * @since 1.0
      */
-    public void setPlayerID(Game game, int id);
+    public void setPlayerID(IClientGame game, int id);
     
     /**
      * Registers a game to this {@link IPlayer}. Can be used to register single 
      * games or multiple times (with multiple calls).
      * 
-     * @param game The new {@link Game} to link to this {@link IPlayer}.
+     * @param game The new {@link IClientGame} to link to this {@link IPlayer}.
      * @since 1.0
      */
-    public void reigsterGame(Game game);
+    public void reigsterGame(IClientGame game);
     
     /**
      * Starts playing the {@link Game} instances bound to this {@link IPlayer}.
@@ -43,10 +44,10 @@ public interface IPlayer
      * {@link Game} instances will call this when they receive a 
      * {@link MessageType#TURN_NOTIFY} message.
      * 
-     * @param caller The {@link Game} object that called this method.
+     * @param caller The {@link IClientGame} object that called this method.
      * @since 1.0
      */
-    public void play(Game caller);
+    public void play(IClientGame caller);
     
     /**
      * Sets the amount of credits this {@link IPlayer} has to bet with. 
@@ -85,8 +86,8 @@ public interface IPlayer
      * safely. If multiple games are assigned to the player, the others should 
      * be untouched when this is called.
      * 
-     * @param game The {@link Game} to stop taking part in.
+     * @param game The {@link IClientGame} to stop taking part in.
      * @since 1.0
      */
-    public void leaveGame(Game game);
+    public void leaveGame(IClientGame game);
 }

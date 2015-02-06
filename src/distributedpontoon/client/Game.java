@@ -24,7 +24,6 @@ public class Game extends IClientGame
     private final Hand hand;
     private final IPlayer player;
     private int bet;
-    private int gameID;
     
     public Game(IPlayer player, int bet)
     {
@@ -105,11 +104,13 @@ public class Game extends IClientGame
     public void disconnect()
     {
         System.out.println("Disconnecting from game.");
+        if (output == null || connection == null)
+            return; // Output or connection is already closed.
+        
         try {
             output.writeObject(MessageType.CLIENT_DISCONNECT);
             output.flush(); 
-            if (output != null)
-                output.close();
+            output.close();
             connection.close();
         } catch (IOException ioEx) {
             System.err.println(ioEx.getMessage());
@@ -187,23 +188,25 @@ public class Game extends IClientGame
                         gameID = input.readInt();
                         break;
                     case GAME_INITIALISE:
+                        // Accept the first two cards the dealer sends.
                         Card cardOne = (Card)input.readObject();
                         Card cardTwo = (Card)input.readObject();
                         hand.addCard(cardOne);
                         hand.addCard(cardTwo);
                         break;
                     case CARD_TRANSFER:
+                        // Accept cards dealt from the dealer.
                         Card card = (Card)input.readObject();
                         hand.addCard(card);
                         break;
                     case TURN_NOTIFY:
+                        // Tell the player to make a move.
                         player.play(this);
                         break;
                     case GAME_RESULT:
+                        // Give the player their winnings and end the game.
                         if (input.readBoolean())
                             player.adjustBalance(bet);
-                        else
-                            player.adjustBalance(-bet);
                         disconnect();
                         break;
                     default:

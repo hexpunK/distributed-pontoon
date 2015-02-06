@@ -5,27 +5,45 @@ import java.io.IOException;
 import java.net.InetAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
-import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.Calendar;
-import java.util.Date;
 import java.util.HashMap;
 import java.util.Scanner;
 import java.util.Set;
 
 /**
- *
+ * A TCP server that listens for connections on a specified port. When a client 
+ * connects a new {@link IServerGame} instance will be launched for that client 
+ * to play a game against.
+ * 
  * @author 6266215
+ * @version 1.0
+ * @since 2015-02-04
  */
 public class Server implements Runnable
 {
+    /** 
+     * A singleton instance of the server to prevent multiple copies running 
+     * per process.
+     */
+    private static Server INSTANCE;
+    /** The TCP port to listen for connections on. */
     private final int port;
+    /** The name/IP address of the host running this server. */
     private String hostName;
+    /** TCP Socket to listen for connections. */
     private ServerSocket server;
+    /** A thread to allow this {@link Server} to run in the background. */
     private Thread serverThread;
+    /** A mapping of {@link IServerGame} instances to their executing thread. */
     private final HashMap<IServerGame, Thread> games;
     
-    public Server()
+    /**
+     * Creates a new instance of {@link Server} listening on port 50,000.
+     * 
+     * @since 1.0
+     */
+    private Server()
     {
         this.port = 50000;
         this.hostName = "UNKNOWN";
@@ -34,8 +52,23 @@ public class Server implements Runnable
         this.games = new HashMap<>();
     }
     
-    public Server(int port)
+    /**
+     * Creates a new instance of {@link Server} that listens on the specified 
+     * port. If the port is negative 
+     * 
+     * @param port The port to listen on as an int.
+     * @throws IllegalArgumentException Thrown if the specified port is invalid 
+     * for TCP sockets.
+     * @since 1.0
+     */
+    private Server(int port) throws IllegalArgumentException
     {
+        if (port < 0 || port > 65536) {
+            throw new IllegalArgumentException(
+                    "Port number must be between 0 and 65536"
+            );
+        }
+        
         this.port = port;
         this.hostName = "UNKNOWN";
         this.server = null;
@@ -43,6 +76,50 @@ public class Server implements Runnable
         this.games = new HashMap<>();
     }
     
+    /**
+     * Creates a Singleton instance of the {@link Server} class for this 
+     * process. The returned {@link Server} object is the default construction, 
+     * and will listen on port 50,000.
+     * 
+     * @return A new instance of {@link Server} if none exists, or the currently
+     *  running instance of one has been created before.
+     * @since 1.0
+     */
+    public synchronized static Server getInstance()
+    {
+        if (Server.INSTANCE == null) {
+            Server.INSTANCE = new Server();
+        }        
+        return Server.INSTANCE;
+    }
+    
+    /**
+     * Creates a Singleton instance of the {@link Server} class for this 
+     * process. The returned {@link Server} object will listen on the specified 
+     * port.
+     * 
+     * @param port The port to listen on as an int.
+     * @return A new instance of {@link Server} if none exists, or the currently
+     *  running instance of one has been created before.
+     * @throws IllegalArgumentException Thrown if the specified port is invalid 
+     * for TCP sockets.
+     * @since 1.0
+     */
+    public synchronized static Server getInstance(int port) 
+            throws IllegalArgumentException
+    {
+        if (Server.INSTANCE == null) {
+            Server.INSTANCE = new Server(port);
+        }        
+        return Server.INSTANCE;
+    }
+    
+    /**
+     * Starts running this {@link Server} instance. Begins the server thread to 
+     * allow it to listen for connections in the background.
+     * 
+     * @since 1.0
+     */
     public void init()
     {
         serverMessage("Starting server...");
@@ -59,6 +136,12 @@ public class Server implements Runnable
         }
     }
     
+    /**
+     * Stops this {@link Server} instance. Tells all the running games to end 
+     * before closing the connection.
+     * 
+     * @since 1.0
+     */
     public void kill()
     {
         serverMessage("Shutting down server...");
@@ -85,6 +168,19 @@ public class Server implements Runnable
         }
     }
     
+    /**
+     * Prints information messages to the current {@link System#out} output 
+     * stream.
+     * 
+     * @param msg The message to print as a String. Accepts formatting 
+     * parameters similarly to {@link String#format(java.lang.String, 
+     * java.lang.Object...)}.
+     * @param args Any number of objects to print in the resulting message. For 
+     * objects to print useful data it may require overriding the {@link 
+     * Object#toString()} method.
+     * @since 1.0
+     * @see String#format(java.lang.String, java.lang.Object...)
+     */
     private void serverMessage(String msg, Object...args)
     {
         SimpleDateFormat fmt = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss");
@@ -94,6 +190,19 @@ public class Server implements Runnable
         System.out.printf("SERVER (%s): %s\n", formattedDate, msg);
     }
     
+    /**
+     * Prints information messages to the current {@link System#err} output 
+     * stream.
+     * 
+     * @param msg The message to print as a String. Accepts formatting 
+     * parameters similarly to {@link String#format(java.lang.String, 
+     * java.lang.Object...)}.
+     * @param args Any number of objects to print in the resulting message. For 
+     * objects to print useful data it may require overriding the {@link 
+     * Object#toString()} method.
+     * @since 1.0
+     * @see String#format(java.lang.String, java.lang.Object...)
+     */
     private void serverError(String msg, Object...args)
     {
         SimpleDateFormat fmt = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss");
@@ -103,11 +212,17 @@ public class Server implements Runnable
         System.err.printf("SERVER (%s): %s\n", formattedDate, msg);
     }
     
+    /**
+     * Listens for connections in the background and launches new games when 
+     * a connection is attempted.
+     * 
+     * @since 1.0
+     */
     @Override
     public void run()
     {
-        serverMessage("Server listening (%s:%d).", 
-                hostName, server.getLocalPort());
+        serverMessage("Server listening (%s:%d).", hostName, 
+                server.getLocalPort());
         while (!server.isClosed())
         {
             Socket socket;
@@ -130,23 +245,63 @@ public class Server implements Runnable
     }
     
     /**
-     * @param args the command line arguments
+     * Creates a new instance of a {@link Server}.
+     * 
+     * @param args The command line arguments
      */
     public static void main(String[] args)
     {        
-        Server server = new Server();
-        server.init();
+        Integer port = null;
+        /* handle the command line parameters if any were passed. */
+        for (int i = 0; i < args.length; i++) {
+            switch(args[i]) {
+                case "-p":
+                case "--port":
+                    // Allow the port to be specified.
+                    try {
+                        port = Integer.parseInt(args[i+1]);
+                        i++;
+                    } catch (NumberFormatException nEx) {
+                        System.err.println("Port value must be a number.");
+                    }
+                    break;
+                case "-h":
+                case "--help":
+                    // Show a help message.
+                    System.out.println(helpMessage());
+                    break;
+                default:
+                    System.err.printf("Unknown argument '%s'\n", args[i]);
+            }
+        }
+        
+        Server server = null;
+        /* If a port has been specified, attempt to start a server on it. */
+        if (port != null) {
+            try {
+                server = Server.getInstance(port);
+            } catch (IllegalArgumentException argEx) {
+                System.err.println(argEx.getMessage());
+                return;
+            }
+        } else {
+            server = Server.getInstance();
+        }
+        
+        server.init(); // Start running the server.
         
         Scanner input = new Scanner(System.in);
         String line;
-        
-        while ((line = input.nextLine()) != null) {
+        boolean running = true;
+        /* Check for commands provided through the CLI. */
+        while (running) {
+            line = input.nextLine();
             line = line.trim();
             switch (line) {
                 case "q":
                 case "quit":
                     server.kill();
-                    System.exit(0);
+                    running = false;
                     break;
                 default:
                     System.out.printf("Unknown command '%s'.\n", line);
@@ -154,4 +309,20 @@ public class Server implements Runnable
         }
     }
     
+    /**
+     * Creates a help message for the {@link Server} command line arguments.
+     * 
+     * @return A String containing the help message.
+     * @since 1.0
+     */
+    private static String helpMessage()
+    {
+        StringBuilder sb = new StringBuilder();
+        sb.append("Distributed Pontoon Server Help:\n");
+        sb.append("\tCommand [options] (Short) - Action\n");
+        sb.append("\t--port [port] (-p) - Specifies the port to listen on.\n");
+        sb.append("\t--help (-h) - Displays this help message.\n");
+        
+        return sb.toString();
+    }
 }

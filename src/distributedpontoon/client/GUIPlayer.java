@@ -1,5 +1,7 @@
 package distributedpontoon.client;
 
+import distributedpontoon.shared.IClientGame;
+
 /**
  * Allows a human to play a game of Pontoon using a graphical interface.
  * 
@@ -15,7 +17,7 @@ public class GUIPlayer extends HumanPlayer
     }
     
     @Override
-    public void play(Game caller)
+    public void play(IClientGame caller)
     {
         throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
     }

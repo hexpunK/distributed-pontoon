@@ -1,6 +1,7 @@
 package distributedpontoon.stubs;
 
 import java.io.IOException;
+import java.net.InetAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
 
@@ -10,7 +11,7 @@ import java.net.Socket;
  */
 public class StubbedServer implements Runnable {
     
-    private int port;
+    private final int port;
     private String hostName;
     private ServerSocket server;
     private Thread serverThread;
@@ -33,11 +34,12 @@ public class StubbedServer implements Runnable {
     {
         try {
             server = new ServerSocket(port);
-            hostName = server.getInetAddress().getHostName();
+            hostName = InetAddress.getLocalHost().getHostName();
             
             serverThread = new Thread(this);
             serverThread.start();
-            System.out.printf("Stubbed server now running on %s:%d...\n", hostName, port);
+            System.out.printf("Stubbed server now running on %s:%d...\n", 
+                    hostName, port);
         } catch (IOException ioEx) {
             System.err.println(ioEx.getMessage());
         }
@@ -48,9 +50,7 @@ public class StubbedServer implements Runnable {
         try {
             server.close();
             serverThread.join();
-        } catch (IOException ioEx) {
-            System.err.println(ioEx.getMessage());
-        } catch (InterruptedException ex) {
+        } catch (IOException | InterruptedException ex) {
             System.err.println(ex.getMessage());
         }
     }

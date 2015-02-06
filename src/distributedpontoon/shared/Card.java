@@ -41,6 +41,8 @@ public class Card implements Serializable
         
         /** The point value of the current card. */
         private final int value;
+        /** Serialisation ID. */
+        private static final long serialVersionUID = 1L;
         
         CardRank(int points)
         { 
@@ -61,6 +63,9 @@ public class Card implements Serializable
         HEARTS,
         SPADES,
         CLUBS;
+        
+        /** Serialisation ID. */
+        private static final long serialVersionUID = 1L;
     }
     
     /**
@@ -71,6 +76,8 @@ public class Card implements Serializable
      * @since 1.0
      */
     public static final Set<Card> ALL_CARDS;
+    /** Serialisation ID. */
+    private static final long serialVersionUID = 1L;
     
     static {
         // Static initialiser to give us all possible cards.
