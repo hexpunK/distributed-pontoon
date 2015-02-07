@@ -10,8 +10,8 @@ import java.util.Scanner;
  * being used.
  * 
  * @author 6266215
- * @version 1.0
- * @since 2015-02-05
+ * @version 1.2
+ * @since 2015-02-07
  */
 public class CLIPlayer extends HumanPlayer 
 {
@@ -19,7 +19,8 @@ public class CLIPlayer extends HumanPlayer
     private final Scanner input;
     
     /**
-     * Creates a new {@link CLIPlayer} and sets the input reader up.
+     * Creates a new {@link CLIPlayer} and sets the input reader up. This player
+     *  has an initial balance of 500 credits.
      * 
      * @since 1.0
      */
@@ -28,6 +29,60 @@ public class CLIPlayer extends HumanPlayer
         super();
         this.balance = 500;
         this.input = new Scanner(System.in);
+    }
+    
+    /**
+     * Requests instructions from the user to allow this {@link CLIPlayer} to 
+     * connect to new servers, start games, or exit entirely.
+     * 
+     * @since 1.2
+     */
+    @Override
+    public void init()
+    {
+        boolean playing = true;
+        String line;
+        String svr = "localhost";
+        int port = 50000;
+        
+        while (playing) {
+            System.out.println("What would you like to do?");
+            line = input.nextLine().trim();
+            switch(line) {
+                case "s":
+                case "server":
+                    System.out.println("Enter new server address/name:");
+                    svr = input.nextLine().trim();
+                    break;
+                case "port":
+                    System.out.println("Enter new server port:");
+                    port = input.nextInt();
+                    input.nextLine();
+                    break;
+                case "p":
+                case "play":
+                    game = new Game(this, 50, svr, port);
+                    startGame();
+                    try {
+                        gameThread.join();
+                    } catch (InterruptedException ex) {
+                        System.err.println(ex.getMessage());
+                    }
+                    break;
+                case "bal":
+                case "balance":
+                    System.out.printf("Current balance: %d\n", getBalance());
+                    break;
+                case "q":
+                case "quit":
+                    playing = false;
+                    break;
+                case "h":
+                case "help":
+                default:
+                    System.out.println(helpMenu());
+            }
+        }
     }
     
     /**
@@ -44,8 +99,7 @@ public class CLIPlayer extends HumanPlayer
     public void play(IClientGame caller)
     {
         System.out.println("Please enter your move...");
-        String move = input.nextLine();
-        move = move.trim();
+        String move = input.nextLine().trim();
         
         switch (move) {
             case "s":
@@ -69,6 +123,10 @@ public class CLIPlayer extends HumanPlayer
                     System.err.println("You must enter a number. Bet unchanged.");
                 }
                 play(caller);
+                break;
+            case "bal":
+            case "balance":
+                System.out.printf("Current balance: %d\n", getBalance());
                 break;
             case "h":
             case "hand":
@@ -104,20 +162,43 @@ public class CLIPlayer extends HumanPlayer
      * for help during a game.
      * 
      * @return The help message as a String.
+     * @since 1.1
      */
     private String helpMessage()
     {
         StringBuilder sb = new StringBuilder();
-        sb.append("Pontoon Client CLI Help:\n");
+        sb.append("Pontoon Client CLI - Game Help:\n");
         sb.append("\tCommand (Short) - Action\n");
         sb.append("\tstick (s) - Tells the dealer you don't want any more cards"
                 + " this round.\n");
         sb.append("\ttwist (t) - Requests another card from the dealer.\n");
         sb.append("\tbet (b) - Adjusts the bet for this hand by the specified "
                 + "amount.\n");
+        sb.append("\tbalance (bal) - Displays your current balance.\n");
         sb.append("\thand (h) - Displays the cards in your hand and their total"
                 + " point value.\n");
         sb.append("\tquit (q) - Exits the current game.");
+        
+        return sb.toString();
+    }
+    
+    /**
+     * Creates a help menu for the {@link CLIPlayer} main menu.
+     * 
+     * @return A String containing the help message for a {@link CLIPlayer}.
+     * @since 1.2
+     */
+    private String helpMenu()
+    {
+        StringBuilder sb = new StringBuilder();
+        sb.append("Pontoon Client CLI - Menu Help:\n");
+        sb.append("\tCommand (Short) - Action\n");
+        sb.append("\tserver (s) - Lets you select a new server to play on.\n");
+        sb.append("\tport - Lets you select a new port to connect with.\n");
+        sb.append("\tplay (p) - Starts a game with the current server.\n");
+        sb.append("\tbalance (bal) - Displays your current balance.\n");
+        sb.append("\thelp (h) - Displays this help message.\n");
+        sb.append("\tquit (q) - Exits the CLI client.\n");
         
         return sb.toString();
     }

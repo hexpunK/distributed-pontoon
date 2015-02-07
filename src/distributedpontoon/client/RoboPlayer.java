@@ -23,6 +23,9 @@ public class RoboPlayer implements IPlayer
         this.games = new HashMap<>();
         this.playerIDs = new HashMap<>();
     }
+    
+    @Override
+    public void init() {}
 
     @Override
     public void setPlayerID(IClientGame game, int id)

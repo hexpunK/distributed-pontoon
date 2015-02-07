@@ -18,6 +18,8 @@ public abstract class IClientGame extends IGame {
     
     public abstract void disconnect();
     
+    public abstract void ready();
+    
     public abstract void twist();
     
     public abstract void stand();

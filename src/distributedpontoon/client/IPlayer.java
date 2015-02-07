@@ -8,11 +8,19 @@ import distributedpontoon.shared.NetMessage.MessageType;
  * would need to call.
  * 
  * @author 6266215
- * @version 1.0
- * @since 2015-02-04
+ * @version 1.1
+ * @since 2015-02-07
  */
 public interface IPlayer
 {   
+    /**
+     * Start this {@link IPlayer} instance and accept the initial input based on
+     *  the implementation requirements (server selection, stats, etc.).
+     * 
+     * @since 1.1
+     */
+    public void init();
+    
     /**
      * Sets the ID this {@link IPlayer} will use to identify themselves to 
      * a specific game.

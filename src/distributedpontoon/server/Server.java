@@ -295,8 +295,7 @@ public class Server implements Runnable
         boolean running = true;
         /* Check for commands provided through the CLI. */
         while (running) {
-            line = input.nextLine();
-            line = line.trim();
+            line = input.nextLine().trim();
             switch (line) {
                 case "q":
                 case "quit":

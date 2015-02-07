@@ -75,7 +75,6 @@ public abstract class HumanPlayer implements IPlayer
         
         gameThread = new Thread(game);
         gameThread.start();
-        this.balance -= game.getBet(); // Remove the players bet.
     }
 
     /**
@@ -147,7 +146,7 @@ public abstract class HumanPlayer implements IPlayer
     {
         this.game.disconnect();
         try {
-            gameThread.join();
+            gameThread.join(1000);
         } catch (InterruptedException ex) {
             System.out.println(ex.getMessage());
         }

@@ -22,10 +22,12 @@ public class NetMessage<T> implements Serializable {
      */
     public static enum MessageType implements Serializable
     {
+        CLIENT_JOIN,
         /** Sent to clients to let them know the server knows them. */
         JOIN_ACKNOWLEDGE,
         /** Sent when a game initialises. */
         GAME_INITIALISE,
+        PLAYER_READY,
         /** Sent to clients to tell them it's their turn. */
         TURN_NOTIFY,
         /** Received from clients with their move for the turn. */

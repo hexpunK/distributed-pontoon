@@ -56,12 +56,25 @@ public class MultiPlayerGame extends IServerGame
     }
     
     @Override
-    public void dealCard() throws IOException {
+    public void dealCard(int playerID) throws IOException {
         throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
     }
 
     @Override
-    public void checkHand(int playerID, Hand h) throws IOException {
+    public void checkHand(int playerID, Hand h, int clientPts) 
+            throws IOException {
+        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+    }
+    
+    @Override
+    public void playerWin(int playerID, boolean twentyOne) throws IOException
+    {
+        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+    }
+    
+    @Override
+    public void dealerWin(int playerID) throws IOException
+    {
         throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
     }
     

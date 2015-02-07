@@ -21,8 +21,8 @@ public class Game extends IClientGame
     private final String serverName;
     private Socket connection;
     private ObjectOutputStream output;
-    private final Hand hand;
     private final IPlayer player;
+    private Hand hand;
     private int bet;
     
     public Game(IPlayer player, int bet)
@@ -47,8 +47,15 @@ public class Game extends IClientGame
         this.bet = bet;
     }
     
-    public Game(IPlayer player, int bet, String hostName, int port)
+    public Game(IPlayer player, int bet, String hostName, int port) 
+            throws IllegalArgumentException
     {
+        if (port < 0 || port > 65536) {
+            throw new IllegalArgumentException(
+                    "Port number must be between 0 and 65536"
+            );
+        }
+        
         this.port = port;
         this.serverName = hostName;
         this.connection = null;
@@ -71,6 +78,7 @@ public class Game extends IClientGame
         bet = newBet;
     }
     
+    @Override
     public int getBet() { return bet; }
     
     @Override
@@ -86,15 +94,15 @@ public class Game extends IClientGame
     @Override
     public boolean connect()
     {
-        System.out.println("Attempt to connect to game...");
+        gameMessage("Attempt to connect to game...");
         try {
             InetAddress address = InetAddress.getByName(serverName);
             connection = new Socket(address, port);
         } catch (UnknownHostException hostEx) {
-            System.err.println(hostEx.getMessage());
+            gameError(hostEx.getMessage());
             return false;
         } catch (IOException ioEx) {
-            System.err.println(ioEx.getMessage());
+            gameError(ioEx.getMessage());
             return false;
         }        
         return true;
@@ -103,7 +111,7 @@ public class Game extends IClientGame
     @Override
     public void disconnect()
     {
-        System.out.println("Disconnecting from game.");
+        gameMessage("Disconnecting from game.");
         if (output == null || connection == null)
             return; // Output or connection is already closed.
         
@@ -113,7 +121,31 @@ public class Game extends IClientGame
             output.close();
             connection.close();
         } catch (IOException ioEx) {
-            System.err.println(ioEx.getMessage());
+            gameError(ioEx.getMessage());
+        }
+    }
+    
+    public void startGame()
+    {
+        hand = new Hand();
+        try {
+            output.writeObject(MessageType.CLIENT_JOIN);
+            output.flush();
+        } catch (IOException ex) {
+            gameError("Error starting game:\n%s", ex.getMessage());
+        }
+    }
+
+    @Override
+    public void ready() {
+        /* Tell the server that this {@link Game} is ready. */
+        if (!connection.isClosed()) {
+            try {
+                output.writeObject(MessageType.PLAYER_READY);
+                output.flush();
+            } catch (IOException ioEx) {
+                gameError(ioEx.getMessage());
+            }
         }
     }
     
@@ -122,10 +154,29 @@ public class Game extends IClientGame
     {   
         try {
             output.writeObject(MessageType.TURN_RESPONSE);
-            output.writeChar('t');
+            output.writeObject(PlayerAction.PLAYER_TWIST);
             output.flush();
         } catch (IOException ioEx) {
-            System.err.println(ioEx.getMessage());
+            gameError(ioEx.getMessage());
+        }
+    }
+    
+    public void acceptCard(Card card)
+    {
+        hand.addCard(card);
+        gameMessage("Adding card %s.\nHand total %d.", card, hand.total());
+        for (Card c : hand.getCards()) {
+            if ((c.Rank == Card.CardRank.ACE)
+                && c.isAceHigh() 
+                && (hand.total() > 21)) {
+                    gameMessage("Soft total is bust (%d)", hand.total());
+                    c.setAceHigh(false);
+            }
+        }
+        
+        if (hand.total() > 21) {
+            gameMessage("Hard total is bust (%d).", hand.total());
+            bust();
         }
     }
     
@@ -134,12 +185,12 @@ public class Game extends IClientGame
     {
         try {    
             output.writeObject(MessageType.TURN_RESPONSE);
-            output.writeChar('s');
+            output.writeObject(PlayerAction.PLAYER_STICK);
             output.writeObject(hand);
             output.writeInt(hand.total());
             output.flush();
         } catch (IOException ex) {
-            System.err.println(ex.getMessage());
+            gameError(ex.getMessage());
         }
     }
     
@@ -148,7 +199,7 @@ public class Game extends IClientGame
     {   
         try {
             output.writeObject(MessageType.TURN_RESPONSE);
-            output.writeChar('b');
+            output.writeObject(PlayerAction.PLAYER_BUST);
             output.flush();
         } catch (IOException ioEx) {
             System.err.println(ioEx.getMessage());
@@ -159,7 +210,6 @@ public class Game extends IClientGame
     public void run()
     {
         if (!connect()) return; // If connecting fails, just return.
-        System.out.println("Connected!");
         
         ObjectInputStream input;
         MessageType msg;
@@ -186,6 +236,8 @@ public class Game extends IClientGame
                         // Set the player and game ID values.
                         player.setPlayerID(this, input.readInt());
                         gameID = input.readInt();
+                        gameMessage("Connected!");
+                        startGame();
                         break;
                     case GAME_INITIALISE:
                         // Accept the first two cards the dealer sends.
@@ -193,11 +245,13 @@ public class Game extends IClientGame
                         Card cardTwo = (Card)input.readObject();
                         hand.addCard(cardOne);
                         hand.addCard(cardTwo);
+                        ready();
                         break;
                     case CARD_TRANSFER:
                         // Accept cards dealt from the dealer.
                         Card card = (Card)input.readObject();
-                        hand.addCard(card);
+                        acceptCard(card);
+                        ready();
                         break;
                     case TURN_NOTIFY:
                         // Tell the player to make a move.
@@ -205,18 +259,29 @@ public class Game extends IClientGame
                         break;
                     case GAME_RESULT:
                         // Give the player their winnings and end the game.
-                        if (input.readBoolean())
-                            player.adjustBalance(bet);
+                        gameMessage("Game over!");
+                        boolean winner = input.readBoolean();
+                        if (winner == PLAYER_WIN) {
+                            if (input.readBoolean()) {
+                                gameMessage("Player won hand with a Pontoon!.");
+                                player.adjustBalance((int)(bet*1.5f));
+                            } else {
+                                gameMessage("Player won hand.");
+                            }
+                        } else {
+                            gameMessage("Dealer won hand.");
+                            player.adjustBalance(-bet);
+                        }
                         disconnect();
                         break;
                     default:
-                        System.err.printf("Clients do not handle this type of "
+                        gameError("Clients do not handle this type of "
                                 + "message (%s)\n", msg);
                 }
             } catch (ClassNotFoundException cnfEx) {
-                System.err.println(cnfEx.getMessage());
+                gameError(cnfEx.getMessage());
             } catch (IOException ioEx) {
-                System.err.println(ioEx.getMessage());
+                gameError(ioEx.getMessage());
             }
         }
         

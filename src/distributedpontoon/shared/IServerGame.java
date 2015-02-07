@@ -23,9 +23,15 @@ public abstract class IServerGame extends IGame {
     
     public abstract void registerPlayer(Socket socket);
     
-    public abstract void dealCard() throws IOException;
+    public abstract void dealCard(int playerID) throws IOException;
     
-    public abstract void checkHand(int playerID, Hand h) throws IOException;
+    public abstract void checkHand(int playerID, Hand h, int clientPts) 
+            throws IOException;
+    
+    public abstract void playerWin(int playerID, boolean twentyOne) 
+            throws IOException;
+    
+    public abstract void dealerWin(int playerID) throws IOException;
     
     public abstract void stop();
 }

@@ -17,6 +17,9 @@ public class GUIPlayer extends HumanPlayer
     }
     
     @Override
+    public void init() {}
+    
+    @Override
     public void play(IClientGame caller)
     {
         throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
