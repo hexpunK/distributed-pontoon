@@ -121,7 +121,7 @@ public class CLIPlayer extends HumanPlayer
                     caller.setBet(bet);
                     System.out.println("Bet changed!");
                 } catch (InputMismatchException inEx) {
-                    System.err.println("You must enter a number. Bet unchanged.");
+                    System.err.println("Can only     be a number. Bet unchanged.");
                 }
                 play(caller);
                 break;

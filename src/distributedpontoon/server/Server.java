@@ -181,7 +181,7 @@ public class Server implements Runnable
      * @since 1.0
      * @see String#format(java.lang.String, java.lang.Object...)
      */
-    private void serverMessage(String msg, Object...args)
+    private synchronized void serverMessage(String msg, Object...args)
     {
         SimpleDateFormat fmt = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss");
         Calendar cal = Calendar.getInstance();
@@ -203,7 +203,7 @@ public class Server implements Runnable
      * @since 1.0
      * @see String#format(java.lang.String, java.lang.Object...)
      */
-    private void serverError(String msg, Object...args)
+    private synchronized void serverError(String msg, Object...args)
     {
         SimpleDateFormat fmt = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss");
         Calendar cal = Calendar.getInstance();

@@ -1,5 +1,6 @@
 package distributedpontoon.client;
 
+import distributedpontoon.shared.IClientGame;
 import java.util.Scanner;
 
 /**
@@ -13,8 +14,7 @@ public class Client
         Scanner input = new Scanner(System.in);
         boolean running = true;
         
-        IPlayer player;
-        ClientGame g;
+        IPlayer player = null;
         
         while (running) {
             System.out.println("Run which client? (gui, cli, robo)");
@@ -23,19 +23,17 @@ public class Client
                 case "gui":
                     System.out.println("Starting GUI client...");
                     player = new GUIPlayer();
-                    g = new ClientGame(player, 50);
-                    player.reigsterGame(g);
                     player.init();
                     break;
                 case "cli":
                     System.out.println("Starting CLI client...");
                     player = new CLIPlayer();
-                    g = new ClientGame(player, 50);
-                    player.reigsterGame(g);
                     player.init();
                     break;
                 case "robo":
                     System.out.println("Starting automated clients...");
+                    player = new RoboPlayer();
+                    player.init();
                     break;
                 case "exit":
                 case "quit":
@@ -44,6 +42,8 @@ public class Client
                 default:
                     System.err.printf("Unknown client type '%s'!\n", run);
             }
+            if (player != null)
+                while (player.isPlaying()) {}
         }
     }
 }

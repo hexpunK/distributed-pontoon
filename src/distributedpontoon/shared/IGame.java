@@ -54,7 +54,7 @@ public abstract class IGame implements Runnable {
      * @since 1.1
      * @see String#format(java.lang.String, java.lang.Object...)
      */
-    public void gameMessage(String msg, Object...args)
+    public synchronized void gameMessage(String msg, Object...args)
     {
         String gameIDStr = gameID <= 0 ? "?" : String.valueOf(gameID);
         msg = String.format(msg, args);
@@ -75,7 +75,7 @@ public abstract class IGame implements Runnable {
      * @since 1.1
      * @see String#format(java.lang.String, java.lang.Object...)
      */
-    public void gameError(String msg, Object...args)
+    public synchronized void gameError(String msg, Object...args)
     {
         String gameIDStr = gameID <= 0 ? "?" : String.valueOf(gameID);
         msg = String.format(msg, args);

@@ -1,6 +1,5 @@
 package distributedpontoon.stubs;
 
-import distributedpontoon.client.ClientGame;
 import distributedpontoon.client.IPlayer;
 import distributedpontoon.shared.IClientGame;
 
@@ -44,4 +43,7 @@ public class StubbedPlayer implements IPlayer {
 
     @Override
     public void setPlayerID(IClientGame game, int id) { }
+
+    @Override
+    public void init() { }
 }

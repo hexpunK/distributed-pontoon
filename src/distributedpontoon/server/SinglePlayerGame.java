@@ -1,5 +1,6 @@
 package distributedpontoon.server;
 
+import distributedpontoon.client.IPlayer;
 import distributedpontoon.shared.Card;
 import distributedpontoon.shared.Card.CardRank;
 import distributedpontoon.shared.Deck;
@@ -13,15 +14,29 @@ import java.io.ObjectOutputStream;
 import java.net.Socket;
 
 /**
- *
+ * An {@link IServerGame} implementation to handle a single {@link IPlayer} 
+ * playing against a dealer.
+ * 
  * @author 6266215
+ * @version 1.1
+ * @since 2015-02-07
  */
 public class SinglePlayerGame extends IServerGame
 {   
+    /** The {@link Socket} for the playing client. */
     private Socket socket;
+    /** Input from the client socket. */
     private ObjectInputStream input;
+    /** Output to the client socket. */
     private ObjectOutputStream output;
     
+    /**
+     * Creates a new {@link SinglePlayerGame} with no connected socket. To use 
+     * this {@link SinglePlayerGame} a player will need to be registered with 
+     * {@link IServerGame#registerPlayer(java.net.Socket)}.
+     * 
+     * @since 1.0
+     */
     public SinglePlayerGame()
     {
         super();
@@ -95,7 +110,9 @@ public class SinglePlayerGame extends IServerGame
         boolean dlrHas2Card = (dlrHas21 && dealer.size() == 2);
         
         if (plyHas2Card) {
+            // Player has a Pontoon.
             if (dlrHas2Card) {
+                // Player and deal have the same hand, so a push occurs.
                 gameMessage("Player and Dealer have a Pontoon! Push.");
                 playerWin(playerID, false);
             } else {
@@ -103,10 +120,13 @@ public class SinglePlayerGame extends IServerGame
                 playerWin(playerID, true);
             }
         } else if (plyHas5Card) {
+            // Player has a 5-card trick.
             if (dlrHas2Card) {
+                // Dealer Pontoon has a higher precedence.
                 gameMessage("Dealer wins with a 5-card trick!");
                 dealerWin(playerID);
             } else if (dlrHas5Card) {
+                // Player and deal have the same hand, so a push occurs.
                 gameMessage("Player and Dealer have a 5-card trick! Push.");
                 playerWin(playerID, false);
             }else {
@@ -114,7 +134,8 @@ public class SinglePlayerGame extends IServerGame
                 playerWin(playerID, false);
             }
         } else {
-            if (plyTotal > dlrTotal) {
+            // Any other possible hands.
+            if (plyTotal >= dlrTotal) {
                 gameMessage("Player wins hand! Player: %d\tDealer: %d", 
                     plyTotal, dlrTotal);
                 playerWin(playerID, false);
@@ -157,6 +178,7 @@ public class SinglePlayerGame extends IServerGame
     {
         output.writeObject(MessageType.GAME_RESULT);
         output.writeBoolean(PLAYER_WIN);
+        output.writeObject(dealer);
         output.writeBoolean(twentyOne);
         output.flush();
     }
@@ -166,6 +188,7 @@ public class SinglePlayerGame extends IServerGame
     {
         output.writeObject(MessageType.GAME_RESULT);
         output.writeBoolean(DEALER_WIN);
+        output.writeObject(dealer);
         output.flush();
     }
     
@@ -193,10 +216,11 @@ public class SinglePlayerGame extends IServerGame
             return;
         }
         
-        MessageType reply;
+        MessageType reply; // The message sent from the connected client.
         
         try {
             while (!socket.isClosed()) {
+                /* Open the input only if it's not currently open. */
                 if (input == null) {
                     try {
                         input = new ObjectInputStream(socket.getInputStream());
@@ -211,6 +235,7 @@ public class SinglePlayerGame extends IServerGame
                 
                 switch (reply) {
                     case CLIENT_JOIN:
+                        // Initialise the game for a connecting client.
                         output.writeObject(MessageType.GAME_INITIALISE);
                         try {
                             output.writeObject(deck.pullCard());
@@ -224,10 +249,12 @@ public class SinglePlayerGame extends IServerGame
                         }
                         break;
                     case PLAYER_READY:
+                        // Tell a waiting player that they can take their turn.
                         output.writeObject(MessageType.TURN_NOTIFY);
                         output.flush();
                         break;
                     case TURN_RESPONSE:
+                        // Respond to a player taking a turn.
                         PlayerAction action = (PlayerAction)input.readObject();
                         switch (action) {
                             case PLAYER_STICK:
@@ -250,18 +277,18 @@ public class SinglePlayerGame extends IServerGame
                         }
                         break;
                     case CLIENT_DISCONNECT:
+                        // Disconnect a client and close the game safely.
                         gameMessage("Player leaving.");
                         stop();
                         break;
                     default:
-                        gameError("Unknown message sent to "
-                                + "game:\n\t%s", reply);
+                        gameError("Unknown message sent to game:\n\t%s", reply);
                 }
             }
         } catch (IOException ioEx) {
-            System.err.println(ioEx.getMessage());
+            gameError(ioEx.getMessage());
         } catch (ClassNotFoundException cnfEx) {
-            System.err.println(cnfEx.getMessage());
+            gameError(cnfEx.getMessage());
         }
     }
 }

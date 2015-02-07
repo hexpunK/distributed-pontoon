@@ -261,6 +261,7 @@ public class ClientGame extends IClientGame
                         // Give the player their winnings and end the game.
                         gameMessage("Game over!");
                         boolean winner = input.readBoolean();
+                        Hand dealerHand = (Hand)input.readObject();
                         if (winner == PLAYER_WIN) {
                             if (input.readBoolean()) {
                                 gameMessage("Player won hand with a Pontoon!.");
@@ -272,7 +273,9 @@ public class ClientGame extends IClientGame
                             gameMessage("Dealer won hand.");
                             player.adjustBalance(-bet);
                         }
-                        disconnect();
+                        gameMessage("Player hand:\n%s", hand);
+                        gameMessage("Dealer hand:\n%s", dealerHand);
+                        player.leaveGame(this);
                         break;
                     default:
                         gameError("Clients do not handle this type of "

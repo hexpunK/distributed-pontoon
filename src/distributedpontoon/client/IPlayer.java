@@ -8,7 +8,7 @@ import distributedpontoon.shared.NetMessage.MessageType;
  * would need to call.
  * 
  * @author 6266215
- * @version 1.1
+ * @version 1.2
  * @since 2015-02-07
  */
 public interface IPlayer
@@ -39,6 +39,15 @@ public interface IPlayer
      * @since 1.0
      */
     public void reigsterGame(IClientGame game);
+    
+    /**
+     * 
+     * 
+     * @return Returns true if this {@link IPlayer} is currently playing. False 
+     * otherwise.
+     * @since 1.2
+     */
+    public boolean isPlaying();
     
     /**
      * Starts playing the {@link IClientGame} instances bound to this {@link 

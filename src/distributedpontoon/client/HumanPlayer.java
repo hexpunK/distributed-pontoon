@@ -24,6 +24,8 @@ public abstract class HumanPlayer implements IPlayer
     protected Thread gameThread;
     /** A unique ID for this {@link HumanPlayer} to be referred to by. */
     protected int playerID;
+    /** Keeps track of whether the playing is in a game or not. */
+    private boolean playing;
 
     /**
      * Creates a new {@link HumanPlayer} with a negative player ID, zero credits
@@ -68,6 +70,9 @@ public abstract class HumanPlayer implements IPlayer
         this.game = game;
     }
 
+    @Override
+    public boolean isPlaying() { return playing; }
+
     /**
      * Initialises the {@link IClientGame} this player is part of. If the player
      *  isn't assigned to a game, nothing will happen.
@@ -81,6 +86,7 @@ public abstract class HumanPlayer implements IPlayer
         
         gameThread = new Thread(game);
         gameThread.start();
+        playing = true;
     }
 
     /**
@@ -156,5 +162,6 @@ public abstract class HumanPlayer implements IPlayer
         } catch (InterruptedException ex) {
             System.out.println(ex.getMessage());
         }
+        playing = false;
     }
 }
