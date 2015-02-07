@@ -18,7 +18,7 @@ import org.junit.BeforeClass;
 public class GameTest {
     
     private static StubbedServer server;
-    private Game instance;
+    private ClientGame instance;
     private Thread gameThread;
     private StubbedPlayer player;
     
@@ -33,7 +33,7 @@ public class GameTest {
     @Before
     public void beforeTest() {
         player = new StubbedPlayer();
-        instance = new Game(player, 50, "localhost", 50000);
+        instance = new ClientGame(player, 50, "localhost", 50000);
         gameThread = new Thread(instance);
         gameThread.start();
         boolean expResult = true;
@@ -55,7 +55,7 @@ public class GameTest {
     }
 
     /**
-     * Test of getHand method, of class Game.
+     * Test of getHand method, of class ClientGame.
      */
     @Test
     public void testGetHand() {
@@ -73,7 +73,7 @@ public class GameTest {
     }
 
     /**
-     * Test of isConnected method, of class Game.
+     * Test of isConnected method, of class ClientGame.
      */
     @Test
     public void testIsConnected() {
@@ -85,7 +85,7 @@ public class GameTest {
     }
 
     /**
-     * Test of twist method, of class Game.
+     * Test of twist method, of class ClientGame.
      */
     @Test
     public void testTwist() {
@@ -99,7 +99,7 @@ public class GameTest {
     }
 
     /**
-     * Test of stand method, of class Game.
+     * Test of stand method, of class ClientGame.
      */
     @Test
     public void testStand() {
@@ -119,7 +119,7 @@ public class GameTest {
     }
 
     /**
-     * Test of bust method, of class Game.
+     * Test of bust method, of class ClientGame.
      */
     @Test
     public void testBust() {

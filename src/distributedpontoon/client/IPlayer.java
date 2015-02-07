@@ -41,15 +41,16 @@ public interface IPlayer
     public void reigsterGame(IClientGame game);
     
     /**
-     * Starts playing the {@link Game} instances bound to this {@link IPlayer}.
+     * Starts playing the {@link IClientGame} instances bound to this {@link 
+     * IPlayer}.
      * 
      * @since 1.0
      */
     public void startGame();
     
     /**
-     * Called by {@link Game} instances to get the player to perform an action.
-     * {@link Game} instances will call this when they receive a 
+     * Called by {@link IClientGame} instances to get the player to perform an 
+     * action. {@link IClientGame} instances will call this when they receive a 
      * {@link MessageType#TURN_NOTIFY} message.
      * 
      * @param caller The {@link IClientGame} object that called this method.
@@ -90,7 +91,7 @@ public interface IPlayer
     public int getBalance();
     
     /**
-     * Disconnects this {@link IPlayer} from the specified {@link Game} 
+     * Disconnects this {@link IPlayer} from the specified {@link IClientGame} 
      * safely. If multiple games are assigned to the player, the others should 
      * be untouched when this is called.
      * 

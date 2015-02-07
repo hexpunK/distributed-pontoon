@@ -1,6 +1,6 @@
 package distributedpontoon.stubs;
 
-import distributedpontoon.client.Game;
+import distributedpontoon.client.ClientGame;
 import distributedpontoon.client.IPlayer;
 import distributedpontoon.shared.IClientGame;
 

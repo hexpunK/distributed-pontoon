@@ -14,7 +14,7 @@ public class Client
         boolean running = true;
         
         IPlayer player;
-        Game g;
+        ClientGame g;
         
         while (running) {
             System.out.println("Run which client? (gui, cli, robo)");
@@ -23,14 +23,14 @@ public class Client
                 case "gui":
                     System.out.println("Starting GUI client...");
                     player = new GUIPlayer();
-                    g = new Game(player, 50);
+                    g = new ClientGame(player, 50);
                     player.reigsterGame(g);
                     player.init();
                     break;
                 case "cli":
                     System.out.println("Starting CLI client...");
                     player = new CLIPlayer();
-                    g = new Game(player, 50);
+                    g = new ClientGame(player, 50);
                     player.reigsterGame(g);
                     player.init();
                     break;

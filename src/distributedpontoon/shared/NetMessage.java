@@ -1,5 +1,6 @@
 package distributedpontoon.shared;
 
+import distributedpontoon.shared.IServerGame;
 import java.io.Serializable;
 
 /**
@@ -22,11 +23,14 @@ public class NetMessage<T> implements Serializable {
      */
     public static enum MessageType implements Serializable
     {
+        /** Sent by a client when it requests to play an {@link IServerGame} */
         CLIENT_JOIN,
         /** Sent to clients to let them know the server knows them. */
         JOIN_ACKNOWLEDGE,
         /** Sent when a game initialises. */
         GAME_INITIALISE,
+        /** Sent by players when they are ready to accept 
+         * {@link MessageType#TURN_NOTIFY} messages. */
         PLAYER_READY,
         /** Sent to clients to tell them it's their turn. */
         TURN_NOTIFY,

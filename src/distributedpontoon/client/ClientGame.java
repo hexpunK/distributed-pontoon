@@ -15,7 +15,7 @@ import java.net.UnknownHostException;
  *
  * @author 6266215
  */
-public class Game extends IClientGame
+public class ClientGame extends IClientGame
 {    
     private final int port;
     private final String serverName;
@@ -25,7 +25,7 @@ public class Game extends IClientGame
     private Hand hand;
     private int bet;
     
-    public Game(IPlayer player, int bet)
+    public ClientGame(IPlayer player, int bet)
     {
         this.port = 50000;
         this.serverName = "localhost";
@@ -36,7 +36,7 @@ public class Game extends IClientGame
         this.bet = bet;
     }
     
-    public Game(IPlayer player, int bet, String hostName)
+    public ClientGame(IPlayer player, int bet, String hostName)
     {
         this.port = 50000;
         this.serverName = hostName;
@@ -47,7 +47,7 @@ public class Game extends IClientGame
         this.bet = bet;
     }
     
-    public Game(IPlayer player, int bet, String hostName, int port) 
+    public ClientGame(IPlayer player, int bet, String hostName, int port) 
             throws IllegalArgumentException
     {
         if (port < 0 || port > 65536) {
@@ -138,7 +138,7 @@ public class Game extends IClientGame
 
     @Override
     public void ready() {
-        /* Tell the server that this {@link Game} is ready. */
+        /* Tell the server that this {@link ClientGame} is ready. */
         if (!connection.isClosed()) {
             try {
                 output.writeObject(MessageType.PLAYER_READY);

@@ -1,11 +1,14 @@
 package distributedpontoon.shared;
 
+import distributedpontoon.shared.Card.CardRank;
+import distributedpontoon.shared.IClientGame;
+import distributedpontoon.shared.IServerGame;
 import java.io.Serializable;
 import java.util.ArrayList;
 
 /**
  * Represents a hand in a playing card game. Contains zero or more {@link Card}
- * objects to be shared between the {@link Client} and {@link Server}.
+ * objects to be shared between an {@link IClientGame} and {@link IServerGame}.
  *
  * @author 6266215
  * @version 1.0
@@ -80,7 +83,7 @@ public class Hand implements Serializable
     /**
      * Removes all the {@link Card}s held in this {@link Hand}.
      *
-     * @return
+     * @return The number of cards removed from this hand as an int.
      * @since 1.0
      */
     public final int clear()

@@ -1,6 +1,7 @@
 package distributedpontoon.client;
 
 import distributedpontoon.shared.IClientGame;
+import distributedpontoon.shared.Hand;
 import distributedpontoon.shared.NetMessage.MessageType;
 import java.util.InputMismatchException;
 import java.util.Scanner;
@@ -61,7 +62,7 @@ public class CLIPlayer extends HumanPlayer
                     break;
                 case "p":
                 case "play":
-                    game = new Game(this, 50, svr, port);
+                    game = new ClientGame(this, 50, svr, port);
                     startGame();
                     try {
                         gameThread.join();
@@ -86,7 +87,7 @@ public class CLIPlayer extends HumanPlayer
     }
     
     /**
-     * Queries the users move in response to a {@link Game} receiving a {@link 
+     * Queries the users move in response to a {@link ClientGame} receiving a {@link 
      * MessageType#TURN_NOTIFY} message from a server. Moves that do not sent a 
      * message back to the server will allow the user to input another once 
      * complete.

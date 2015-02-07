@@ -25,6 +25,12 @@ public abstract class HumanPlayer implements IPlayer
     /** A unique ID for this {@link HumanPlayer} to be referred to by. */
     protected int playerID;
 
+    /**
+     * Creates a new {@link HumanPlayer} with a negative player ID, zero credits
+     *  as a balance and no {@link IClientGame} assigned.
+     * 
+     * @since 1.0
+     */
     public HumanPlayer()
     {
         this.game = null;
@@ -34,7 +40,7 @@ public abstract class HumanPlayer implements IPlayer
     }
     
     /**
-     * Sets the unique ID for this {@link HumanPlayer}. The {@link Game} 
+     * Sets the unique ID for this {@link HumanPlayer}. The {@link IClientGame} 
      * instance provided has no impact on this as a {@link HumanPlayer} can only
      *  be playing one game at a time.
      * 
@@ -63,8 +69,8 @@ public abstract class HumanPlayer implements IPlayer
     }
 
     /**
-     * Initialises the {@link Game} this player is part of. If the player isn't 
-     * assigned to a game, nothing will happen.
+     * Initialises the {@link IClientGame} this player is part of. If the player
+     *  isn't assigned to a game, nothing will happen.
      * 
      * @since 1.0
      */
@@ -78,7 +84,7 @@ public abstract class HumanPlayer implements IPlayer
     }
 
     /**
-     * Play will be called by a {@link Game} when it receives a {@link 
+     * Play will be called by a {@link IClientGame} when it receives a {@link 
      * MessageType#TURN_NOTIFY} message, what happens in this method is up to 
      * the specific implementations of this class.
      * 
@@ -135,8 +141,8 @@ public abstract class HumanPlayer implements IPlayer
     public abstract void viewHand();
     
     /**
-     * Disconnects this {@link HumanPlayer} from the specified {@link Game} 
-     * safely.
+     * Disconnects this {@link HumanPlayer} from the specified {@link 
+     * IClientGame} safely.
      * 
      * @param game The {@link IClientGame} to stop taking part in.
      * @since 1.0
