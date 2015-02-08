@@ -9,13 +9,15 @@ import distributedpontoon.shared.NetMessage.MessageType;
  * {@link GUIPlayer} will be needed.
  * 
  * @author 6266215
- * @version 1.0
+ * @version 1.1
  * @since 2015-02-04
  */
 public abstract class HumanPlayer implements IPlayer
 {
     /** The amount of money the player has left to bet with. */
     protected int balance;
+    /** The current bet for this player. */
+    protected int bet;
     /** The game this player is involved in. Human players can only play one
      game at a time. */
     protected IClientGame game;
@@ -25,7 +27,7 @@ public abstract class HumanPlayer implements IPlayer
     /** A unique ID for this {@link HumanPlayer} to be referred to by. */
     protected int playerID;
     /** Keeps track of whether the playing is in a game or not. */
-    private boolean playing;
+    protected boolean playing;
 
     /**
      * Creates a new {@link HumanPlayer} with a negative player ID, zero credits
@@ -39,6 +41,7 @@ public abstract class HumanPlayer implements IPlayer
         this.gameThread = null;
         this.playerID = -1;
         this.balance = 0;
+        this.bet = 0;
     }
     
     /**
@@ -70,8 +73,27 @@ public abstract class HumanPlayer implements IPlayer
         this.game = game;
     }
 
+    /**
+     * Gets the current {@link IClientGame} being played by this {@link 
+     * HumanPlayer}.
+     * 
+     * @return An {@link IClientGame} instance if a game is being played, null 
+     * if no game is being played.
+     * @since 1.1
+     */
+    public IClientGame getGame() { return this.game; }
+    
+    /**
+     * Checks to see whether this {@link HumanPlayer} is still playing a game of
+     *  Pontoon or not. This should only return false when the {@link IPlayer} 
+     * has indicated that it doesn't want to play any more games.
+     * 
+     * @return Returns true if the {@link HumanPlayer} wants to continue playing
+     *  , false otherwise.
+     * @since 1.0
+     */
     @Override
-    public boolean isPlaying() { return playing; }
+    public synchronized boolean isPlaying() { return playing; }
 
     /**
      * Initialises the {@link IClientGame} this player is part of. If the player
@@ -86,7 +108,6 @@ public abstract class HumanPlayer implements IPlayer
         
         gameThread = new Thread(game);
         gameThread.start();
-        playing = true;
     }
 
     /**
@@ -138,15 +159,6 @@ public abstract class HumanPlayer implements IPlayer
     public int getBalance() { return balance; }
     
     /**
-     * Displays details on the users hand. Specific implementations of this 
-     * class will need to handle this different to suit the user interface in 
-     * use.
-     * 
-     * @since 1.0
-     */
-    public abstract void viewHand();
-    
-    /**
      * Disconnects this {@link HumanPlayer} from the specified {@link 
      * IClientGame} safely.
      * 
@@ -156,11 +168,14 @@ public abstract class HumanPlayer implements IPlayer
     @Override
     public void leaveGame(IClientGame game)
     {
-        this.game.disconnect();
-        try {
-            gameThread.join(1000);
-        } catch (InterruptedException ex) {
-            System.out.println(ex.getMessage());
+        if (this.game != null)
+            this.game.disconnect();
+        if (this.gameThread != null) {
+            try {
+                gameThread.join(1000);
+            } catch (InterruptedException ex) {
+                System.out.println(ex.getMessage());
+            }
         }
         playing = false;
     }

@@ -1,8 +1,11 @@
 package distributedpontoon.client;
 
+import distributedpontoon.shared.Card;
+import distributedpontoon.shared.Card.CardRank;
 import distributedpontoon.shared.IClientGame;
 import distributedpontoon.shared.Hand;
 import distributedpontoon.shared.NetMessage.MessageType;
+import java.util.ArrayList;
 import java.util.InputMismatchException;
 import java.util.Scanner;
 
@@ -11,8 +14,8 @@ import java.util.Scanner;
  * being used.
  * 
  * @author 6266215
- * @version 1.2
- * @since 2015-02-07
+ * @version 1.3
+ * @since 2015-02-08
  */
 public class CLIPlayer extends HumanPlayer 
 {
@@ -29,6 +32,7 @@ public class CLIPlayer extends HumanPlayer
     {
         super();
         this.balance = 500;
+        this.bet = 50;
         this.input = new Scanner(System.in);
     }
     
@@ -41,7 +45,7 @@ public class CLIPlayer extends HumanPlayer
     @Override
     public void init()
     {
-        boolean playing = true;
+        playing = true;
         String line;
         String svr = "localhost";
         int port = 50000;
@@ -62,12 +66,25 @@ public class CLIPlayer extends HumanPlayer
                     break;
                 case "p":
                 case "play":
-                    game = new ClientGame(this, 50, svr, port);
+                    game = new ClientGame(this, bet, svr, port);
                     startGame();
                     try {
                         gameThread.join();
                     } catch (InterruptedException ex) {
                         System.err.println(ex.getMessage());
+                    }
+                    break;
+                    case "b":
+                case "bet":
+                    System.out.printf("Current bet is: %d\n", bet);
+                    System.out.print("Please enter new bet: ");
+                    try {
+                        int newBet = input.nextInt();
+                        input.nextLine();
+                        this.bet = newBet;
+                        System.out.println("Bet changed!");
+                    } catch (InputMismatchException inEx) {
+                        System.err.println("Can only be a number. Bet unchanged.");
                     }
                     break;
                 case "bal":
@@ -111,20 +128,6 @@ public class CLIPlayer extends HumanPlayer
             case "twist":
                 caller.twist();
                 break;
-            case "b":
-            case "bet":
-                System.out.printf("Current bet is: %d\n", caller.getBet());
-                System.out.print("Please enter new bet: ");
-                try {
-                    int bet = input.nextInt();
-                    input.nextLine();
-                    caller.setBet(bet);
-                    System.out.println("Bet changed!");
-                } catch (InputMismatchException inEx) {
-                    System.err.println("Can only     be a number. Bet unchanged.");
-                }
-                play(caller);
-                break;
             case "bal":
             case "balance":
                 System.out.printf("Current balance: %d\n", getBalance());
@@ -132,6 +135,11 @@ public class CLIPlayer extends HumanPlayer
             case "h":
             case "hand":
                 viewHand();
+                play(caller);
+                break;
+            case "a":
+            case "aces":
+                setAces();
                 play(caller);
                 break;
             case "q":
@@ -151,11 +159,62 @@ public class CLIPlayer extends HumanPlayer
      * 
      *  @since 1.0
      */
-    @Override
     public void viewHand()
     {
         System.out.println("Your hand:");
         System.out.println(game.getHand());
+    }
+    
+    /**
+     * Allows the player to change the high/low status of any {@link 
+     * CardRank#ACE} {@link Card}s in their hand. When selecting a card to swap 
+     * the user must not enter a value below 1 or higher than the number of 
+     * aces held, doing so will return from the method with no changes.
+     * 
+     * @since 1.3
+     */
+    public void setAces()
+    {
+        ArrayList<Card> cards = game.getHand().getCards();
+        ArrayList<Card> aces = new ArrayList<>();
+        int aceCount = 0;
+        /* Work out which cards in the hand are aces and which aren't. */
+        for (Card c : cards) {
+            if (c.Rank == Card.CardRank.ACE) {
+                aces.add(c);
+                System.out.printf("(%d) %s,\n", ++aceCount, c);
+            }
+        }
+        if (aces.size() > 0) {
+            /* Let the user change the value of aces. */
+            System.out.printf("You have %d aces.\n", aceCount);
+            System.out.println("Select an ace to switch ('no' to exit):");
+            String r = input.nextLine();
+            switch (r) {
+                case "no":
+                    // Don't change anything.
+                    return;
+                default:
+                    // Attempt to convert the input into a number and find an 
+                    // ace at that index.
+                    int aceNum;
+                    try {
+                        aceNum = Integer.parseInt(r);
+                    } catch (NumberFormatException nfEx) {
+                        System.out.println("You can only use numbers!");
+                        return;
+                    }
+                    if (aceNum <= 0 || aceNum > aceCount) {
+                        System.out.printf("You can only enter 1-%d.", aceCount);
+                        return;
+                    }
+                    aceNum--;
+                    /* Toggle the state of an Ace. */
+                    aces.get(aceNum).setAceHigh(!aces.get(aceNum).isAceHigh());
+            }
+        } else {
+            System.out.println("You have no aces.");
+        }
     }
     
     /**
@@ -173,8 +232,8 @@ public class CLIPlayer extends HumanPlayer
         sb.append("\tstick (s) - Tells the dealer you don't want any more cards"
                 + " this round.\n");
         sb.append("\ttwist (t) - Requests another card from the dealer.\n");
-        sb.append("\tbet (b) - Adjusts the bet for this hand by the specified "
-                + "amount.\n");
+        sb.append("\taces (a) - Lets you change the value of any ace in your "
+                + "hand.\n");
         sb.append("\tbalance (bal) - Displays your current balance.\n");
         sb.append("\thand (h) - Displays the cards in your hand and their total"
                 + " point value.\n");
@@ -197,6 +256,8 @@ public class CLIPlayer extends HumanPlayer
         sb.append("\tserver (s) - Lets you select a new server to play on.\n");
         sb.append("\tport - Lets you select a new port to connect with.\n");
         sb.append("\tplay (p) - Starts a game with the current server.\n");
+        sb.append("\tbet (b) - Adjusts the bet for the next hand by the "
+                + "specified amount.\n");
         sb.append("\tbalance (bal) - Displays your current balance.\n");
         sb.append("\thelp (h) - Displays this help message.\n");
         sb.append("\tquit (q) - Exits the CLI client.\n");

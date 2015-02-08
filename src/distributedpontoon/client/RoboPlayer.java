@@ -1,25 +1,39 @@
 package distributedpontoon.client;
 
 import distributedpontoon.shared.IClientGame;
+import distributedpontoon.shared.Hand;
 import java.util.HashMap;
 import java.util.Random;
 
 /**
- *
+ * An automated Pontoon player. This player will use the same tactic each game, 
+ * calling {@link IClientGame#twist()} as long as the current value of the 
+ * {@link Hand} is below a randomised threshold value (1 to 21 inclusive).
+ * 
  * @author 6266215
  */
 public class RoboPlayer implements IPlayer
 {
+    /** The threshold for twisting for this {@link RoboPlayer}. */
     private final int threshold;
-    private final Random randomiser;
+    /** A mapping of {@link IClientGame}s to their executing {@link Thread}s. */
     private final HashMap<IClientGame, Thread> games;
+    /** A mapping of {@link IClientGame}s to the player ID for each game. */
     private final HashMap<IClientGame, Integer> playerIDs;
+    /** The remaining credits this {@link RoboPlayer} can bet with.  */
     private int balance;
+    /** Indicates whether or not this {@link RoboPlayer} is still playing. */
     private boolean playing;
     
+    /**
+     * Creates a new {@link RoboPlayer} with a randomised threshold value and 
+     * no games assigned.
+     * 
+     * @since 1.0
+     */
     public RoboPlayer()
     {
-        this.randomiser = new Random();
+        Random randomiser = new Random();
         this.threshold = randomiser.nextInt(21);
         this.games = new HashMap<>();
         this.playerIDs = new HashMap<>();
