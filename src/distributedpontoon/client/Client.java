@@ -37,8 +37,7 @@ public class Client
                     break;
                 case "exit":
                 case "quit":
-                    running = false;
-                    break;
+                    return;
                 default:
                     System.err.printf("Unknown client type '%s'!\n", run);
             }

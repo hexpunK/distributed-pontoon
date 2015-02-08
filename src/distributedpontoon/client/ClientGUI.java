@@ -1,14 +1,18 @@
 package distributedpontoon.client;
 
 import distributedpontoon.shared.Card;
+import distributedpontoon.shared.Card.CardRank;
 import distributedpontoon.shared.Hand;
 import distributedpontoon.shared.IClientGame;
 import java.awt.BorderLayout;
+import java.awt.Color;
 import java.awt.Dimension;
 import java.awt.FlowLayout;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.util.ArrayList;
+import java.util.HashMap;
+import javax.swing.ImageIcon;
 import javax.swing.JButton;
 import javax.swing.JFrame;
 import javax.swing.JPanel;
@@ -27,14 +31,20 @@ public class ClientGUI extends JFrame
     private final JButton joinGame;
     private final JButton twistButton;
     private final JButton stickButton;
-    private final ArrayList<JButton> playerCards;
     private final ArrayList<JButton> dealerCards;
+    private final HashMap<Card, ImageIcon> cardIcons;
     
     public ClientGUI(IPlayer player)
     {
         this.player = player;
-        this.playerCards = new ArrayList<>();
         this.dealerCards = new ArrayList<>();
+        this.cardIcons = new HashMap<>();
+        
+        String path = "/distributedpontoon/client/assets/";
+        for (Card c : Card.ALL_CARDS) {
+            ImageIcon img = createImageIcon(path+c.getName()+".png", c.getName());
+            cardIcons.put(c, img);
+        }
         
         try {
             UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
@@ -66,14 +76,28 @@ public class ClientGUI extends JFrame
         this.stickButton.setVisible(false);
         
         buttonPanel = new JPanel(new FlowLayout());
+        buttonPanel.setBackground(Color.RED);
         cardPanel = new JPanel(new FlowLayout());
+        cardPanel.setBackground(Color.BLUE);
+        cardPanel.setSize(500, 100);
         
         this.add(buttonPanel, BorderLayout.NORTH);
-        this.add(cardPanel, BorderLayout.SOUTH);
+        this.add(cardPanel, BorderLayout.CENTER);
         
         buttonPanel.add(joinGame);
         buttonPanel.add(twistButton);
         buttonPanel.add(stickButton);
+    }
+    
+    private ImageIcon createImageIcon(String path, String description)
+    {
+        java.net.URL imgURL = getClass().getResource(path);
+        if (imgURL != null) {
+            return new ImageIcon(imgURL, description);
+        } else {
+            System.err.println("Couldn't find file: " + path);
+            return null;
+        }
     }
     
     public void setGame(IClientGame game)
@@ -83,12 +107,19 @@ public class ClientGUI extends JFrame
     
     public void setHand(Hand hand)
     {
-        playerCards.clear();
+        cardPanel.removeAll();
         for (Card card : hand.getCards()) {
-            JButton cardButton = new JButton(card.toString());
+            JButton cardButton = new JButton(cardIcons.get(card));
             cardButton.setVisible(true);
-            cardButton.setSize(50, 50);
-            playerCards.add(cardButton);
+            if (card.Rank == CardRank.ACE)
+                cardButton.setEnabled(true);
+            else
+                cardButton.setEnabled(false);
+            cardButton.setOpaque(false);
+            cardButton.setContentAreaFilled(true);
+            cardButton.setBackground(Color.YELLOW);
+            cardButton.setBorderPainted(false);
+            cardButton.setFocusPainted(false);
             cardPanel.add(cardButton);
         }
     }
@@ -100,11 +131,11 @@ public class ClientGUI extends JFrame
         this.joinGame.setEnabled(false);
         this.twistButton.setVisible(true);
         this.stickButton.setVisible(true);
+        setHand(game.getHand());
     }
     
     public void readyTurn()
     {
-        setHand(game.getHand());
         System.out.println("Take your turn asshole");
         this.twistButton.setEnabled(true);
         this.stickButton.setEnabled(true);
@@ -115,6 +146,7 @@ public class ClientGUI extends JFrame
         System.out.println("Turns over.");
         this.twistButton.setEnabled(false);
         this.stickButton.setEnabled(false);
+        setHand(game.getHand());
     }
     
     public void leaveGame()

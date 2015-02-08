@@ -10,7 +10,7 @@ import java.util.Set;
  * (represented in {@link CardSuit}). Once created a Card instance is immutable.
  * 
  * @author 6266215
- * @version 1.0
+ * @version 1.1
  * @since 2015-02-03
  */
 public class Card implements Serializable
@@ -153,6 +153,18 @@ public class Card implements Serializable
     }
     
     /**
+     * Gets the name of this card from its {@link CardRank} and {@link CardSuit}
+     *  , separated by "of". The name will be capitalised.
+     * 
+     * @return Returns the name of this {@link Card} as a {@link String}.
+     * @since 1.1
+     */
+    public String getName()
+    {
+        return String.format("%s OF %s", Rank.name(), Suit.name());
+    }
+    
+    /**
      * Prints the value and suit of this {@link Card}.
      * 
      * @return The name of this card as a {@link String}.
@@ -161,7 +173,6 @@ public class Card implements Serializable
     @Override
     public String toString()
     {
-        return String.format("%s OF %s (%d)", 
-                Rank.name(), Suit.name(), getValue());
+        return String.format("%s (%d)", getName(), getValue());
     }
 }

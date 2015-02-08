@@ -35,6 +35,7 @@ public class GUIPlayer extends HumanPlayer
             {
                 leaveGame(game);
                 ((JFrame)(ce.getComponent())).dispose();
+                playing = false;
             }
         });
     }
@@ -49,6 +50,15 @@ public class GUIPlayer extends HumanPlayer
     public void leaveGame(IClientGame game)
     {
         gui.leaveGame();
-        super.leaveGame(game);
+        if (this.game != null)
+            this.game.disconnect();
+        if (this.gameThread != null) {
+            try {
+                gameThread.join(1000);
+            } catch (InterruptedException ex) {
+                System.out.println(ex.getMessage());
+            }
+        }
+        playing = true;
     }
 }
