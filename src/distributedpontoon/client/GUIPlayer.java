@@ -3,7 +3,9 @@ package distributedpontoon.client;
 import distributedpontoon.shared.IClientGame;
 import java.awt.event.ComponentAdapter;
 import java.awt.event.ComponentEvent;
+import java.lang.reflect.InvocationTargetException;
 import javax.swing.JFrame;
+import javax.swing.SwingUtilities;
 
 /**
  * Allows a human to play a game of Pontoon using a graphical interface.
@@ -19,23 +21,33 @@ public class GUIPlayer extends HumanPlayer
     public GUIPlayer()
     {
         super();
+        this.balance = 500;
+        this.bet = 50;
     }
     
     @Override
     public void init()
     {
+        final GUIPlayer ply = this;
         playing = true;
         game = new ClientGame(this, bet, "localhost", 50000);
-        gui = new ClientGUI(this);
-        gui.setGame(game);
-        gui.addComponentListener(new ComponentAdapter()
+        SwingUtilities.invokeLater(new Runnable() 
         {
             @Override
-            public void componentHidden(ComponentEvent ce)
+            public void run() 
             {
-                leaveGame(game);
-                ((JFrame)(ce.getComponent())).dispose();
-                playing = false;
+                gui = new ClientGUI(ply);
+                gui.setGame(game);
+                gui.addComponentListener(new ComponentAdapter()
+                {
+                    @Override
+                    public void componentHidden(ComponentEvent ce)
+                    {
+                        leaveGame(game);
+                        ((JFrame)(ce.getComponent())).dispose();
+                        playing = false;
+                    }
+                });
             }
         });
     }
@@ -43,7 +55,28 @@ public class GUIPlayer extends HumanPlayer
     @Override
     public void play(IClientGame caller)
     {
-        gui.readyTurn();
+        try {
+            SwingUtilities.invokeAndWait(new Runnable()
+            {
+                @Override
+                public void run()
+                {
+                    gui.setHand(game.getHand());
+                    gui.readyTurn();
+                }
+            });
+            while (!gui.isTurnTaken()) { }
+            SwingUtilities.invokeLater(new Runnable()
+            {
+                @Override
+                public void run()
+                {
+                    gui.endTurn();
+                }
+            });
+        } catch (InterruptedException | InvocationTargetException ex ) {
+            System.err.println(ex.getMessage());
+        }
     }
 
     @Override

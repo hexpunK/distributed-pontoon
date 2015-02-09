@@ -1,11 +1,14 @@
 package distributedpontoon.client;
 
-import distributedpontoon.shared.IClientGame;
 import java.util.Scanner;
 
 /**
- *
+ * Initialises various clients for the distributed Pontoon application. Supports
+ *  the {@link CLIPlayer}, {@link GUIPlayer} and {@link RoboPlayer} clients.
+ * 
  * @author 6266215
+ * @version 1.0
+ * @since 2015-02-04
  */
 public class Client
 {    
@@ -21,16 +24,19 @@ public class Client
             String run = input.nextLine().trim();
             switch (run) {
                 case "gui":
+                    // Launch the GUI client.
                     System.out.println("Starting GUI client...");
                     player = new GUIPlayer();
                     player.init();
                     break;
                 case "cli":
+                    // Launch the CLI client.
                     System.out.println("Starting CLI client...");
                     player = new CLIPlayer();
                     player.init();
                     break;
                 case "robo":
+                    // Launch a automated client.
                     System.out.println("Starting automated clients...");
                     player = new RoboPlayer();
                     player.init();

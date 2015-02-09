@@ -1,5 +1,6 @@
 package distributedpontoon.shared;
 
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.EmptyStackException;
 import java.util.Stack;
@@ -38,7 +39,10 @@ public class Deck
      *
      * @since 1.0
      */
-    public final void createDeck() { cards.addAll(Card.ALL_CARDS); }
+    public final void createDeck() 
+    { 
+        cards.addAll(Arrays.asList(Card.values()));
+    }
 
     /**
      * Randomises the order of the {@link Card}s in this {@link Deck}.
