@@ -82,7 +82,7 @@ public class ClientGame extends IClientGame
     public int getBet() { return bet; }
     
     @Override
-    public Hand getHand() { return hand; }
+    public synchronized Hand getHand() { return hand; }
     
     @Override
     public boolean isConnected()
@@ -122,12 +122,15 @@ public class ClientGame extends IClientGame
             connection.close();
         } catch (IOException ioEx) {
             gameError(ioEx.getMessage());
+        } finally {
+            connection = null;
         }
     }
     
     public void startGame()
     {
         hand = new Hand();
+        player.adjustBalance(-bet);
         try {
             output.writeObject(MessageType.CLIENT_JOIN);
             output.flush();
@@ -137,7 +140,8 @@ public class ClientGame extends IClientGame
     }
 
     @Override
-    public void ready() {
+    public void ready()
+    {
         /* Tell the server that this {@link ClientGame} is ready. */
         if (!connection.isClosed()) {
             try {
@@ -163,7 +167,9 @@ public class ClientGame extends IClientGame
     
     public void acceptCard(Card card)
     {
-        hand.addCard(card);
+        synchronized(this) {
+            hand.addCard(card);
+        }
         gameMessage("Adding card %s.\nHand total %d.", card, hand.total());
         for (Card c : hand.getCards()) {
             if ((c.Rank == Card.CardRank.ACE)
@@ -222,7 +228,7 @@ public class ClientGame extends IClientGame
             return;
         }
         
-        while (!connection.isClosed())
+        while (connection != null && !connection.isClosed())
         {
             try {
                 try {
@@ -262,19 +268,22 @@ public class ClientGame extends IClientGame
                         gameMessage("Game over!");
                         boolean winner = input.readBoolean();
                         Hand dealerHand = (Hand)input.readObject();
+                        gameMessage("Player hand:\n%s", hand);
+                        gameMessage("Dealer hand:\n%s", dealerHand);
                         if (winner == PLAYER_WIN) {
-                            if (input.readBoolean()) {
+                            boolean pontoon = input.readBoolean();
+                            if (pontoon) {
                                 gameMessage("Player won hand with a Pontoon!.");
                                 player.adjustBalance((int)(bet*1.5f));
                             } else {
                                 gameMessage("Player won hand.");
+                                player.adjustBalance(bet);
                             }
+                            player.playerWin(this, pontoon);
                         } else {
                             gameMessage("Dealer won hand.");
-                            player.adjustBalance(-bet);
+                            player.dealerWin(this);
                         }
-                        gameMessage("Player hand:\n%s", hand);
-                        gameMessage("Dealer hand:\n%s", dealerHand);
                         player.leaveGame(this);
                         break;
                     default:

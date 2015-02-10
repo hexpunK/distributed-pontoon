@@ -21,10 +21,13 @@ import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.UIManager;
 import javax.swing.UnsupportedLookAndFeelException;
+import javax.swing.border.EmptyBorder;
 
 /**
- *
- * @author jwoerner
+ * 
+ * 
+ * @author 6266215
+ * @version 1.0
  */
 public class ClientGUI extends JFrame
 {
@@ -34,14 +37,13 @@ public class ClientGUI extends JFrame
     private final JButton[] menuButtons;
     private final JButton[] playButtons;
     private final JLabel playerScore, playerBal, playerBet;
-    private final ArrayList<JButton> dealerCards;
     private final HashMap<Card, ImageIcon> cardIcons;
     private boolean turnTaken;
+    private final Dimension buttonSize = new Dimension(150, 75);
     
     public ClientGUI(IPlayer player)
     {
         this.player = player;
-        this.dealerCards = new ArrayList<>();
         this.cardIcons = new HashMap<>();
         
         String path = "/distributedpontoon/client/assets/";
@@ -52,7 +54,10 @@ public class ClientGUI extends JFrame
         
         try {
             UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
-        } catch (ClassNotFoundException | InstantiationException | IllegalAccessException | UnsupportedLookAndFeelException ex) {
+        } catch (ClassNotFoundException 
+                | InstantiationException 
+                | IllegalAccessException 
+                | UnsupportedLookAndFeelException ex) {
             System.err.println("Couldn't find platform look and feel.");
         }
         
@@ -62,48 +67,49 @@ public class ClientGUI extends JFrame
         this.setLayout(new BorderLayout());
         this.setDefaultCloseOperation(JFrame.HIDE_ON_CLOSE);
         this.setLocationByPlatform(true);
-        this.setVisible(true);
         
         JButton joinGame = new JButton("Play Game");
-        joinGame.setSize(100, 50);
+        joinGame.setSize(buttonSize);
         joinGame.addActionListener(new ButtonListener());
         joinGame.setVisible(true);
         
         JButton changeBet = new JButton("Change Bet");
-        changeBet.setSize(100, 50);
+        changeBet.setSize(buttonSize);
         changeBet.addActionListener(new ButtonListener());
         changeBet.setVisible(true);
         
         JButton quit = new JButton("Quit");
-        quit.setSize(100, 50);
+        quit.setSize(buttonSize);
         quit.addActionListener(new ButtonListener());
-        quit.setVisible(true);
-        
-        this.menuButtons = new JButton[] { joinGame, changeBet, quit };
+        quit.setVisible(false);
         
         JButton twistButton = new JButton("Twist");
-        twistButton.setSize(100, 50);
+        twistButton.setSize(buttonSize);
         twistButton.addActionListener(new ButtonListener());
         twistButton.setVisible(false);
         
         JButton stickButton = new JButton("Stick");
-        stickButton.setSize(100, 50);
+        stickButton.setSize(buttonSize);
         stickButton.addActionListener(new ButtonListener());
         stickButton.setVisible(false);
         
+        this.menuButtons = new JButton[] { joinGame, changeBet };
         this.playButtons = new JButton[] { twistButton, stickButton, quit };
         
         this.playerScore = new JLabel("Player Score: 0");
         this.playerScore.setAlignmentX(JLabel.CENTER_ALIGNMENT);
         this.playerScore.setHorizontalAlignment(JLabel.CENTER);
         this.playerScore.setSize(this.getSize().width, 70);
+        this.playerScore.setBorder(new EmptyBorder(5, 5, 5, 5));
         
         this.playerBal = new JLabel(String.format("Player Balance: %d", 
                 player.getBalance()));
         this.playerBal.setSize(this.getSize().width, 70);
+        this.playerBal.setBorder(new EmptyBorder(5, 5, 5, 5));
         
         this.playerBet = new JLabel("Bet: 0");
         this.playerBet.setSize(this.getSize().width, 70);
+        this.playerBet.setBorder(new EmptyBorder(5, 5, 5, 5));
         
         this.cardPanel = new JPanel();
         this.cardPanel.setLayout(new FlowLayout());
@@ -115,16 +121,16 @@ public class ClientGUI extends JFrame
             this.buttonPanel.add(button);
         for (JButton button : playButtons)
             this.buttonPanel.add(button);
-        this.buttonPanel.setSize(this.getSize().width, 100);
         this.add(buttonPanel, BorderLayout.NORTH);
         
         this.infoPanel = new JPanel();
         this.infoPanel.setLayout(new BorderLayout());
-        this.infoPanel.setSize(this.getSize().width, 100);
         this.infoPanel.add(playerBal, BorderLayout.EAST);
         this.infoPanel.add(playerScore, BorderLayout.CENTER);
         this.infoPanel.add(playerBet, BorderLayout.WEST);
         this.add(infoPanel, BorderLayout.SOUTH);
+        this.setVisible(true);
+        this.toFront();
     }
     
     private ImageIcon createImageIcon(String path, String description)
@@ -143,6 +149,11 @@ public class ClientGUI extends JFrame
         this.game = game;
     }
     
+    public void updateBet()
+    {
+        playerBet.setText(String.format("Bet: %d", game.getBet()));
+    }
+    
     public void setHand(Hand hand)
     {
         cardPanel.removeAll();
@@ -150,7 +161,11 @@ public class ClientGUI extends JFrame
             JButton cardButton = new JButton();
             ImageIcon icon = cardIcons.get(card);
             cardButton.setIcon(icon);
-            cardButton.setPreferredSize(new Dimension(icon.getIconWidth(), icon.getIconHeight()));
+            cardButton.setPreferredSize(
+                    new Dimension(
+                            icon.getIconWidth(), 
+                            icon.getIconHeight()
+                    ));
             cardButton.setVisible(true);
             cardButton.setActionCommand(card.getName());
             cardButton.setBorderPainted(false);
@@ -177,7 +192,6 @@ public class ClientGUI extends JFrame
                     }
                 });
             }
-            cardButton.setBackground(Color.YELLOW);
             cardPanel.add(cardButton);
         }
         playerScore.setText(String.format("Player Score: %d", hand.total()));
@@ -186,26 +200,29 @@ public class ClientGUI extends JFrame
     
     public void joinGame()
     {
-        player.startGame();
         for (JButton button : menuButtons)
             button.setVisible(false);
+        for (JButton button : playButtons)
+            button.setVisible(true);
         setHand(game.getHand());
         playerBet.setText(String.format("Bet: %d", game.getBet()));
+        playerBal.setText(String.format("Player Balance: %d", 
+                player.getBalance()));
+        
     }
     
     public void readyTurn()
     {
-        System.out.println("Take your turn asshole");
         for (JButton button : playButtons)
-            button.setVisible(true);
+            button.setEnabled(true);
         turnTaken = false;
     }
     
     public void endTurn()
     {
-        System.out.println("Turns over.");
+        setHand(game.getHand());
         for (JButton button : playButtons)
-            button.setVisible(false);
+            button.setEnabled(false);
     }
     
     public synchronized boolean isTurnTaken() { return turnTaken; }
@@ -213,6 +230,8 @@ public class ClientGUI extends JFrame
     public void leaveGame()
     {
         setHand(new Hand());
+        for (JButton button : playButtons)
+            button.setVisible(false);
         for (JButton button : menuButtons)
             button.setVisible(true);
         playerBal.setText(String.format("Player Balance: %d", 
@@ -226,7 +245,7 @@ public class ClientGUI extends JFrame
         {
             switch (ae.getActionCommand()) {
                 case "Play Game":
-                    joinGame();
+                    player.startGame();
                     break;
                 case "Change Bet":
                     String answ = JOptionPane.showInputDialog(
@@ -237,6 +256,7 @@ public class ClientGUI extends JFrame
                     try {
                         int newBet = Integer.parseInt(answ);
                         game.setBet(newBet);
+                        updateBet();
                     } catch (NumberFormatException ex) {
                         JOptionPane.showMessageDialog(null, 
                                 "Error", 
@@ -245,7 +265,7 @@ public class ClientGUI extends JFrame
                     }
                     break;
                 case "Quit":
-                    leaveGame();
+                    player.leaveGame(game);
                     break;
                 case "Twist":
                     game.twist();

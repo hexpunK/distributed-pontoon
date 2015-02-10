@@ -2,6 +2,7 @@ package distributedpontoon.client;
 
 import distributedpontoon.shared.IClientGame;
 import distributedpontoon.shared.NetMessage.MessageType;
+import java.util.logging.Logger;
 
 /**
  * A base class for clients that will allow the user to play a game of Pontoon. 
@@ -128,7 +129,7 @@ public abstract class HumanPlayer implements IPlayer
      * @since 1.0
      */
     @Override
-    public void setBalance(int bal) { balance = bal; }
+    public synchronized void setBalance(int bal) { balance = bal; }
 
     /**
      * Changes the amount of credits this {@link HumanPlayer} has to bet with by
@@ -142,7 +143,7 @@ public abstract class HumanPlayer implements IPlayer
      * @since 1.0
      */
     @Override
-    public boolean adjustBalance(int deltaBal)
+    public synchronized boolean adjustBalance(int deltaBal)
     { 
         balance += deltaBal;
         return balance > 0;
@@ -156,7 +157,7 @@ public abstract class HumanPlayer implements IPlayer
      * @since 1.0
      */
     @Override
-    public int getBalance() { return balance; }
+    public synchronized int getBalance() { return balance; }
     
     /**
      * Disconnects this {@link HumanPlayer} from the specified {@link 

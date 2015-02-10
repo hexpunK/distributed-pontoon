@@ -4,7 +4,10 @@ import distributedpontoon.shared.IClientGame;
 import java.awt.event.ComponentAdapter;
 import java.awt.event.ComponentEvent;
 import java.lang.reflect.InvocationTargetException;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import javax.swing.JFrame;
+import javax.swing.JOptionPane;
 import javax.swing.SwingUtilities;
 
 /**
@@ -38,6 +41,7 @@ public class GUIPlayer extends HumanPlayer
             {
                 gui = new ClientGUI(ply);
                 gui.setGame(game);
+                gui.updateBet();
                 gui.addComponentListener(new ComponentAdapter()
                 {
                     @Override
@@ -50,6 +54,19 @@ public class GUIPlayer extends HumanPlayer
                 });
             }
         });
+    }
+
+    @Override
+    public void startGame()
+    {
+        super.startGame();
+        /* Sleep the thread for a few ms to let some values update. */
+        try {
+            Thread.sleep(100);
+        } catch (InterruptedException ex) {
+            Logger.getLogger(GUIPlayer.class.getName()).log(Level.SEVERE, null, ex);
+        }
+        gui.joinGame();
     }
     
     @Override
@@ -66,6 +83,7 @@ public class GUIPlayer extends HumanPlayer
                 }
             });
             while (!gui.isTurnTaken()) { }
+            Thread.sleep(100); // Let the hand update before updating the GUI.
             SwingUtilities.invokeLater(new Runnable()
             {
                 @Override
@@ -80,10 +98,43 @@ public class GUIPlayer extends HumanPlayer
     }
 
     @Override
+    public void playerWin(IClientGame game, boolean pontoon)
+    {
+        String msg;
+        if (pontoon) {
+            msg = String.format("You won the hand with a Pontoon!\n"
+                        + "Adding %d credits to balance.", 
+                        game.getBet());
+        } else {
+            msg = String.format("You won the hand!\n"
+                    + "Returning bet of %d credits.", 
+                        game.getBet());
+        }
+        JOptionPane.showMessageDialog(
+                null, 
+                msg,
+                "Hand Won",
+                JOptionPane.INFORMATION_MESSAGE
+        );
+    }
+
+    @Override
+    public void dealerWin(IClientGame game)
+    {
+        JOptionPane.showMessageDialog(
+                null, 
+                String.format("Dealer won the hand. Removing %d credits.", 
+                        game.getBet()),
+                "Hand Won",
+                JOptionPane.INFORMATION_MESSAGE
+        );
+    }
+
+    @Override
     public void leaveGame(IClientGame game)
     {
         gui.leaveGame();
-        if (this.game != null)
+        if (this.game != null && this.game.isConnected())
             this.game.disconnect();
         if (this.gameThread != null) {
             try {

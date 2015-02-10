@@ -95,7 +95,14 @@ public enum Card implements Serializable
         private final int value;
         /** Serialisation ID. */
         private static final long serialVersionUID = 1L;
-        
+        /**
+         * Creates a new CardRank enumeration value with the specified point 
+         * value.
+         * 
+         * @param points The number of points this {@link CardRank} is worth as 
+         * an int.
+         * @since 1.0
+         */
         CardRank(int points)
         { 
             this.value = points;
@@ -123,9 +130,9 @@ public enum Card implements Serializable
     /** Serialisation ID. */
     private static final long serialVersionUID = 1L;
     /** The suit of this card as a {@link CardSuit} value. */
-    public transient final CardSuit Suit;
+    public final CardSuit Suit;
     /** The point value of the card as a {@link CardRank}. */
-    public transient final CardRank Rank;
+    public final CardRank Rank;
     /** If the current card is an Ace, we can make it count as 11 instead. */
     private boolean aceHigh;
     

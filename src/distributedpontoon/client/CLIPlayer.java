@@ -153,6 +153,25 @@ public class CLIPlayer extends HumanPlayer
         }
     }
 
+    @Override
+    public void playerWin(IClientGame game, boolean pontoon) 
+    {
+        if (pontoon) {
+            System.out.printf("You won with a pontoon! Adding %d credits.\n", 
+                    game.getBet());
+        } else {
+            System.out.printf("You won! Bet of %d returned.\n", game.getBet());
+        }
+        System.out.printf("Current balance: %d\n", balance);
+    }
+
+    @Override
+    public void dealerWin(IClientGame game)
+    { 
+        System.out.printf("Dealer won. Removing %d credits.\n", game.getBet());
+        System.out.printf("Current balance: %d\n", balance);
+    }
+
     /**
      * Prints out the contents and total point value of the current {@link Hand}
      *  for this {@link CLIPlayer} to the standard output.

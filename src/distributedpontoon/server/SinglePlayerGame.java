@@ -92,8 +92,6 @@ public class SinglePlayerGame extends IServerGame
             gameError("Player lied about their score.");
         }
         
-        gameMessage("Player hand:\n%s", h);
-        
         boolean plyHas21 = (plyTotal == 21);
         boolean plyHas5Card = (plyHas21 && h.size() == 5);
         boolean plyHas2Card = (plyHas21 && h.size() == 2);
@@ -168,8 +166,6 @@ public class SinglePlayerGame extends IServerGame
                 break;
             }
         }
-        
-        gameMessage("Dealer hand:\n%s", dealer);
         return (dealer.total() <= 21);
     }
     

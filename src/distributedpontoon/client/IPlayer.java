@@ -8,8 +8,8 @@ import distributedpontoon.shared.NetMessage.MessageType;
  * would need to call.
  * 
  * @author 6266215
- * @version 1.2
- * @since 2015-02-07
+ * @version 1.3
+ * @since 2015-02-09
  */
 public interface IPlayer
 {   
@@ -98,6 +98,26 @@ public interface IPlayer
      * @since 1.0
      */
     public int getBalance();
+    
+    /**
+     * Called when an {@link IPlayer} wins an {@link IClientGame}, specific 
+     * {@link IPlayer} implementations can then display relevant messages to the
+     *  user.
+     * 
+     * @param game The {@link IClientGame} that was won.
+     * @param pontoon If the {@link IPlayer} won with a pontoon, this will be 
+     * true.
+     * @since 1.3
+     */
+    public void playerWin(IClientGame game, boolean pontoon);
+    
+    /**
+     * Called when an {@link IPlayer} loses a {@link IClientGame} to the dealer.
+     * 
+     * @param game The {@link IClientGame} that was lost.
+     * @since 1.3
+     */
+    public void dealerWin(IClientGame game);
     
     /**
      * Disconnects this {@link IPlayer} from the specified {@link IClientGame} 

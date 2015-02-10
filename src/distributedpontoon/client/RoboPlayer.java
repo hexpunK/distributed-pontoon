@@ -37,6 +37,7 @@ public class RoboPlayer implements IPlayer
         this.threshold = randomiser.nextInt(21);
         this.games = new HashMap<>();
         this.playerIDs = new HashMap<>();
+        this.balance = 300;
     }
     
     @Override
@@ -68,7 +69,7 @@ public class RoboPlayer implements IPlayer
     }
 
     @Override
-    public boolean isPlaying() { return playing; }
+    public synchronized boolean isPlaying() { return playing; }
     
     @Override
     public void startGame()
@@ -89,17 +90,37 @@ public class RoboPlayer implements IPlayer
     }    
 
     @Override
-    public void setBalance(int bal) { this.balance = bal; }
+    public synchronized void setBalance(int bal) { this.balance = bal; }
 
     @Override
-    public boolean adjustBalance(int deltaBal)
+    public synchronized boolean adjustBalance(int deltaBal)
     {
         balance += deltaBal;
         return balance > 0;
     }
 
     @Override
-    public int getBalance() { return balance; }
+    public synchronized int getBalance() { return balance; }
+    
+    @Override
+    public synchronized void playerWin(IClientGame game, boolean pontoon) 
+    {
+        if (pontoon) {
+            System.out.printf("Player won with a pontoon! Added %d credits.\n", 
+                    game.getBet());
+        } else {
+            System.out.printf("Player won! Bet of %d returned.\n",
+                    game.getBet());
+        }
+        System.out.printf("Current balance: %d\n", balance);
+    }
+
+    @Override
+    public synchronized void dealerWin(IClientGame game)
+    { 
+        System.out.printf("Dealer won. Removed %d credits.\n", game.getBet());
+        System.out.printf("Current balance: %d\n", balance);
+    }
     
     @Override
     public synchronized void leaveGame(IClientGame game)

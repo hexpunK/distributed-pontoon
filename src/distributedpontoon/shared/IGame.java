@@ -3,7 +3,9 @@ package distributedpontoon.shared;
 import distributedpontoon.client.IPlayer;
 
 /**
- *
+ * A generic base for a game of cards. Tracks the current game ID and the total 
+ * number of games that have run.
+ * 
  * @author 6266215
  * @version 1.2
  * @since 2015-02-07
@@ -30,8 +32,11 @@ public abstract class IGame implements Runnable {
      * @since 1.2
      */
     protected static enum PlayerAction {
+        /** Sent to the server when the {@link IPlayer} wants a new card. */
         PLAYER_TWIST,
+        /** Sent to the server when the {@link IPlayer} wants no new cards. */
         PLAYER_STICK,
+        /** Sent to the server when the {@link IPlayer} goes over 21 points. */
         PLAYER_BUST;
     }
     
