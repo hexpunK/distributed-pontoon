@@ -3,6 +3,7 @@ package distributedpontoon.client;
 import distributedpontoon.shared.Card;
 import distributedpontoon.shared.Hand;
 import distributedpontoon.shared.IClientGame;
+import distributedpontoon.shared.IGame;
 import distributedpontoon.shared.NetMessage.MessageType;
 import java.io.IOException;
 import java.io.ObjectInputStream;
@@ -27,6 +28,9 @@ public class ClientGame extends IClientGame
     
     public ClientGame(IPlayer player, int bet)
     {
+        synchronized(this) { 
+            this.gameID = ++IGame.GameCount;
+        }
         this.port = 50000;
         this.serverName = "localhost";
         this.connection = null;
@@ -38,6 +42,9 @@ public class ClientGame extends IClientGame
     
     public ClientGame(IPlayer player, int bet, String hostName)
     {
+        synchronized(this) { 
+            this.gameID = ++IGame.GameCount;
+        }
         this.port = 50000;
         this.serverName = hostName;
         this.connection = null;
@@ -56,6 +63,9 @@ public class ClientGame extends IClientGame
             );
         }
         
+        synchronized(this) { 
+            this.gameID = ++IGame.GameCount;
+        }
         this.port = port;
         this.serverName = hostName;
         this.connection = null;
@@ -241,7 +251,7 @@ public class ClientGame extends IClientGame
                     case JOIN_ACKNOWLEDGE:
                         // Set the player and game ID values.
                         player.setPlayerID(this, input.readInt());
-                        gameID = input.readInt();
+                        //gameID = input.readInt();
                         gameMessage("Connected!");
                         startGame();
                         break;

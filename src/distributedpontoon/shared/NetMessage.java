@@ -23,6 +23,9 @@ public class NetMessage<T> implements Serializable {
      */
     public static enum MessageType implements Serializable
     {
+        REGISTER_SERVER,
+        QUERY_SERVERS,
+        POLL_SERVER,
         /** Sent by a client when it requests to play an {@link IServerGame} */
         CLIENT_JOIN,
         /** Sent to clients to let them know the server knows them. */

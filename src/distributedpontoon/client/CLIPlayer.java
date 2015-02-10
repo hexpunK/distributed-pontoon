@@ -48,7 +48,7 @@ public class CLIPlayer extends HumanPlayer
         playing = true;
         String line;
         String svr = "localhost";
-        int port = 50000;
+        int port = 55551;
         
         while (playing) {
             System.out.println("What would you like to do?");

@@ -33,7 +33,7 @@ public class GUIPlayer extends HumanPlayer
     {
         final GUIPlayer ply = this;
         playing = true;
-        game = new ClientGame(this, bet, "localhost", 50000);
+        game = new ClientGame(this, bet, "localhost", 55551);
         SwingUtilities.invokeLater(new Runnable() 
         {
             @Override

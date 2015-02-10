@@ -1,10 +1,15 @@
 package distributedpontoon.server;
 
 import distributedpontoon.shared.IServerGame;
+import distributedpontoon.shared.NetMessage;
+import distributedpontoon.shared.NetMessage.MessageType;
 import java.io.IOException;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
 import java.net.InetAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.net.UnknownHostException;
 import java.text.SimpleDateFormat;
 import java.util.Calendar;
 import java.util.HashMap;
@@ -45,7 +50,7 @@ public class Server implements Runnable
      */
     private Server()
     {
-        this.port = 50000;
+        this.port = 55551;
         this.hostName = "UNKNOWN";
         this.server = null;
         this.serverThread = null;
@@ -221,6 +226,24 @@ public class Server implements Runnable
     @Override
     public void run()
     {
+        serverMessage("Registering with directory server...");
+        String serverName = "CMPLAB2-04";
+        int directoryPort = 55552;
+        Socket directorySocket;
+        try {
+            InetAddress address = InetAddress.getByName(serverName);
+            directorySocket = new Socket(address, directoryPort);
+            ObjectOutputStream output = new ObjectOutputStream(directorySocket.getOutputStream());
+            
+            output.writeObject(MessageType.REGISTER_SERVER);
+            output.writeUTF(hostName);
+            output.writeInt(port);
+            output.flush();
+        } catch (UnknownHostException hostEx) {
+            System.err.println(hostEx.getMessage());
+        } catch (IOException ioEx) {
+            System.err.println(ioEx.getMessage());
+        }
         serverMessage("Server listening (%s:%d).", hostName, 
                 server.getLocalPort());
         while (!server.isClosed())
@@ -235,12 +258,29 @@ public class Server implements Runnable
             }
             serverMessage("Client %s connecting...", 
                     socket.getInetAddress().getHostName());
-            IServerGame game = new SinglePlayerGame();
-            game.registerPlayer(socket);
-            
-            Thread t = new Thread(game);
-            t.start();
-            games.put(game, t);
+            try {
+                ObjectInputStream input = new ObjectInputStream(socket.getInputStream());
+                MessageType query = (MessageType)input.readObject();
+                switch (query) {
+                    case POLL_SERVER:
+                        ObjectOutputStream reply = new ObjectOutputStream(socket.getOutputStream());
+                        reply.writeObject(MessageType.POLL_SERVER);
+                        reply.flush();
+                        break;
+                    default:
+                        IServerGame game = new SinglePlayerGame();
+                        game.registerPlayer(socket);
+
+                        Thread t = new Thread(game);
+                        t.start();
+                        games.put(game, t);
+                }
+            } catch (IOException ioEx) {
+                System.err.printf("Error: %s\n", ioEx.getMessage());
+            } catch (ClassNotFoundException cnfEx) {
+                System.err.printf("Unknown object type recieved.\n%s\n",
+                        cnfEx.getMessage());
+            }
         }
     }
     
@@ -299,13 +339,13 @@ public class Server implements Runnable
             switch (line) {
                 case "q":
                 case "quit":
-                    server.kill();
                     running = false;
                     break;
                 default:
                     System.out.printf("Unknown command '%s'.\n", line);
             }
         }
+        server.kill();
     }
     
     /**

@@ -61,7 +61,7 @@ public class SinglePlayerGame extends IServerGame
         try {            
             output.writeObject(MessageType.JOIN_ACKNOWLEDGE);
             output.writeInt(1);
-            output.writeInt(gameID);
+            //output.writeInt(gameID);
             output.flush();
             gameMessage("Registered player.");
         } catch (IOException ioEx) {

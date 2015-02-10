@@ -1,7 +1,15 @@
 package distributedpontoon.client;
 
-import distributedpontoon.shared.IClientGame;
 import distributedpontoon.shared.Hand;
+import distributedpontoon.shared.IClientGame;
+import distributedpontoon.shared.NetMessage;
+import distributedpontoon.shared.NetMessage.MessageType;
+import java.io.IOException;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
+import java.net.InetAddress;
+import java.net.Socket;
+import java.net.UnknownHostException;
 import java.util.HashMap;
 import java.util.Random;
 
@@ -43,9 +51,33 @@ public class RoboPlayer implements IPlayer
     @Override
     public void init()
     {
-        String[] addresses = new String[]{"localhost", "localhost", "localhost"};
-        for (String address : addresses) {
-            IClientGame game = new ClientGame(this, 50, address, 50000);
+        HashMap<String, Integer> servers = new HashMap<>();
+        String serverName = "CMPLAB2-04";
+        int directoryPort = 55552;
+        Socket directorySocket;
+        try {
+            InetAddress address = InetAddress.getByName(serverName);
+            directorySocket = new Socket(address, directoryPort);
+            ObjectOutputStream output = new ObjectOutputStream(directorySocket.getOutputStream());
+            ObjectInputStream input = new ObjectInputStream(directorySocket.getInputStream());
+            
+            output.writeObject(MessageType.QUERY_SERVERS);
+            output.flush();
+            MessageType reply = (MessageType)input.readObject();
+            if (reply == MessageType.QUERY_SERVERS) {
+                servers = (HashMap)input.readObject();
+            }
+        } catch (UnknownHostException hostEx) {
+            System.err.println(hostEx.getMessage());
+        } catch (IOException ioEx) {
+            System.err.println(ioEx.getMessage());
+        } catch (ClassNotFoundException cnfEx) {
+            System.err.println(cnfEx.getMessage());
+        }
+        //String[] addresses = new String[]{"CMPLAB2-04", "CMPLAB2-03", "CMPLAB1-15"};
+        for (String address : servers.keySet()) {
+            int tmpPort = servers.get(address);
+            IClientGame game = new ClientGame(this, 50, address, tmpPort);
             Thread t = new Thread(game);
             games.put(game, t);
             playerIDs.put(game, -1);
