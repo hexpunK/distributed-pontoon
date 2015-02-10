@@ -7,8 +7,8 @@ import distributedpontoon.client.IPlayer;
  * number of games that have run.
  * 
  * @author 6266215
- * @version 1.2
- * @since 2015-02-07
+ * @version 1.3
+ * @since 2015-02-10
  */
 public abstract class IGame implements Runnable {
     
@@ -44,6 +44,22 @@ public abstract class IGame implements Runnable {
     protected static volatile int GameCount;
     /** A unique ID for this {@link IGame} instance. */
     protected int gameID;
+    
+    /**
+     * Gets the unique ID for this {@link IGame}.
+     * 
+     * @return The game ID as an int.
+     * @since 1.3
+     */
+    public int getGameID() { return gameID; }
+    
+    /**
+     * Gets the total number of {@link IGame}s played.
+     * 
+     * @return The total number of games as an int.
+     * @since 1.3
+     */
+    public static int TotalGames() { return GameCount; }
     
     /**
      * Prints information messages to the current {@link System#out} output 

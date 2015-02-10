@@ -13,10 +13,8 @@ import java.util.logging.Logger;
  * @version 1.1
  * @since 2015-02-04
  */
-public abstract class HumanPlayer implements IPlayer
+public abstract class HumanPlayer extends IPlayer
 {
-    /** The amount of money the player has left to bet with. */
-    protected int balance;
     /** The current bet for this player. */
     protected int bet;
     /** The game this player is involved in. Human players can only play one
@@ -27,8 +25,6 @@ public abstract class HumanPlayer implements IPlayer
     protected Thread gameThread;
     /** A unique ID for this {@link HumanPlayer} to be referred to by. */
     protected int playerID;
-    /** Keeps track of whether the playing is in a game or not. */
-    protected boolean playing;
 
     /**
      * Creates a new {@link HumanPlayer} with a negative player ID, zero credits

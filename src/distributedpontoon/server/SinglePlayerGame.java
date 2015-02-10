@@ -53,8 +53,8 @@ public class SinglePlayerGame extends IServerGame
         try {
             output = new ObjectOutputStream(socket.getOutputStream());
         } catch (IOException ioEx) {
-            gameError("GAME %d: Could not get socket streams. "
-                    + "Reason:\n\t%s", ioEx.getMessage());
+            gameError("Could not get socket streams. Reason:\n\t%s", 
+                    ioEx.getMessage());
             return;
         }
         
@@ -65,8 +65,8 @@ public class SinglePlayerGame extends IServerGame
             output.flush();
             gameMessage("Registered player.");
         } catch (IOException ioEx) {
-            gameError("GAME %d: Failed to register player. "
-                    + "Reason:\n\t", ioEx.getMessage());
+            gameError("Failed to register player. Reason:\n\t%s", 
+                    ioEx.getMessage());
         }
     }
     

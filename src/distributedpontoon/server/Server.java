@@ -226,8 +226,7 @@ public class Server implements Runnable
     @Override
     public void run()
     {
-        serverMessage("Registering with directory server...");
-        String serverName = "CMPLAB2-04";
+        String serverName = "localhost";
         int directoryPort = 55552;
         Socket directorySocket;
         try {
@@ -235,14 +234,16 @@ public class Server implements Runnable
             directorySocket = new Socket(address, directoryPort);
             ObjectOutputStream output = new ObjectOutputStream(directorySocket.getOutputStream());
             
+            serverMessage("Registering with directory server...");
             output.writeObject(MessageType.REGISTER_SERVER);
             output.writeUTF(hostName);
             output.writeInt(port);
             output.flush();
         } catch (UnknownHostException hostEx) {
-            System.err.println(hostEx.getMessage());
+            serverError("Directory server host '%s' may not exist.", 
+                    serverName);
         } catch (IOException ioEx) {
-            System.err.println(ioEx.getMessage());
+            serverError("Could not register with directory server.");
         }
         serverMessage("Server listening (%s:%d).", hostName, 
                 server.getLocalPort());
@@ -256,24 +257,32 @@ public class Server implements Runnable
                         ioEx.getMessage());
                 continue;
             }
-            serverMessage("Client %s connecting...", 
-                    socket.getInetAddress().getHostName());
+            
             try {
                 ObjectInputStream input = new ObjectInputStream(socket.getInputStream());
                 MessageType query = (MessageType)input.readObject();
                 switch (query) {
                     case POLL_SERVER:
-                        ObjectOutputStream reply = new ObjectOutputStream(socket.getOutputStream());
-                        reply.writeObject(MessageType.POLL_SERVER);
+                        ObjectOutputStream reply = 
+                                new ObjectOutputStream(socket.getOutputStream());
+                        reply.writeBoolean(true);
                         reply.flush();
                         break;
-                    default:
+                    case CLIENT_JOIN:
+                        serverMessage("Client %s connecting...", 
+                                socket.getInetAddress().getHostName());
                         IServerGame game = new SinglePlayerGame();
+                        serverMessage("Client %s registered to game %d.", 
+                                socket.getInetAddress().getHostName(), 
+                                game.getGameID());
                         game.registerPlayer(socket);
 
                         Thread t = new Thread(game);
                         t.start();
                         games.put(game, t);
+                        break;
+                    default:
+                        serverError("Unknown message %s received.", query);
                 }
             } catch (IOException ioEx) {
                 System.err.printf("Error: %s\n", ioEx.getMessage());

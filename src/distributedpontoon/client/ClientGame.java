@@ -104,10 +104,13 @@ public class ClientGame extends IClientGame
     @Override
     public boolean connect()
     {
-        gameMessage("Attempt to connect to game...");
+        gameMessage("Attempting to connect to game...");
         try {
             InetAddress address = InetAddress.getByName(serverName);
             connection = new Socket(address, port);
+            ObjectOutputStream out = new ObjectOutputStream(connection.getOutputStream());
+            out.writeObject(MessageType.CLIENT_JOIN);
+            out.flush();
         } catch (UnknownHostException hostEx) {
             gameError(hostEx.getMessage());
             return false;

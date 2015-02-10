@@ -2,6 +2,16 @@ package distributedpontoon.client;
 
 import distributedpontoon.shared.IClientGame;
 import distributedpontoon.shared.NetMessage.MessageType;
+import distributedpontoon.shared.Pair;
+import java.io.IOException;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
+import java.net.InetAddress;
+import java.net.Socket;
+import java.net.UnknownHostException;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Set;
 
 /**
  * Base class for Pontoon players, contains all the required methods a player 
@@ -11,15 +21,52 @@ import distributedpontoon.shared.NetMessage.MessageType;
  * @version 1.3
  * @since 2015-02-09
  */
-public interface IPlayer
+public abstract class IPlayer
 {   
+    /** The remaining credits this {@link IPlayer} can bet with.  */
+    protected int balance;
+    /** Indicates whether or not this {@link IPlayer} is still playing. */
+    protected boolean playing;
+    
     /**
      * Start this {@link IPlayer} instance and accept the initial input based on
      *  the implementation requirements (server selection, stats, etc.).
      * 
      * @since 1.1
      */
-    public void init();
+    public abstract void init();
+    
+    public Set<Pair<String, Integer>> findServers()
+    {
+        Set<Pair<String, Integer>> servers = new HashSet<>();
+        String serverName = "localhost";
+        int directoryPort = 55552;
+        Socket directorySocket;
+        try {
+            InetAddress address = InetAddress.getByName(serverName);
+            directorySocket = new Socket(address, directoryPort);
+            ObjectOutputStream output = 
+                    new ObjectOutputStream(directorySocket.getOutputStream());
+            ObjectInputStream input = 
+                    new ObjectInputStream(directorySocket.getInputStream());
+            
+            output.writeObject(MessageType.QUERY_SERVERS);
+            output.flush();
+            MessageType reply = (MessageType)input.readObject();
+            if (reply == MessageType.QUERY_SERVERS) {
+                servers = (HashSet)input.readObject();
+            }
+        } catch (UnknownHostException hostEx) {
+            System.err.printf("Directory server not found, host '%s' may not "
+                    + "exist.", serverName);
+            return null;
+        } catch (IOException | ClassNotFoundException ex) {
+            System.err.println("Could not contact directory server. No servers"
+                    + " found.");
+            return null;
+        }
+        return servers;
+    }
     
     /**
      * Sets the ID this {@link IPlayer} will use to identify themselves to 
@@ -29,7 +76,7 @@ public interface IPlayer
      * @param id The unique ID for the game as an int.
      * @since 1.0
      */
-    public void setPlayerID(IClientGame game, int id);
+    public abstract void setPlayerID(IClientGame game, int id);
     
     /**
      * Registers a game to this {@link IPlayer}. Can be used to register single 
@@ -38,7 +85,7 @@ public interface IPlayer
      * @param game The new {@link IClientGame} to link to this {@link IPlayer}.
      * @since 1.0
      */
-    public void reigsterGame(IClientGame game);
+    public abstract void reigsterGame(IClientGame game);
     
     /**
      * 
@@ -47,7 +94,7 @@ public interface IPlayer
      * otherwise.
      * @since 1.2
      */
-    public boolean isPlaying();
+    public abstract boolean isPlaying();
     
     /**
      * Starts playing the {@link IClientGame} instances bound to this {@link 
@@ -55,7 +102,7 @@ public interface IPlayer
      * 
      * @since 1.0
      */
-    public void startGame();
+    public abstract void startGame();
     
     /**
      * Called by {@link IClientGame} instances to get the player to perform an 
@@ -65,7 +112,7 @@ public interface IPlayer
      * @param caller The {@link IClientGame} object that called this method.
      * @since 1.0
      */
-    public void play(IClientGame caller);
+    public abstract void play(IClientGame caller);
     
     /**
      * Sets the amount of credits this {@link IPlayer} has to bet with. 
@@ -75,7 +122,7 @@ public interface IPlayer
      * @param bal The new amount of credits as an int.
      * @since 1.0
      */
-    public void setBalance(int bal);
+    public abstract void setBalance(int bal);
     
     /**
      * Changes the amount of credits this {@link IPlayer} has to bet with by
@@ -88,7 +135,7 @@ public interface IPlayer
      * otherwise.
      * @since 1.0
      */
-    public boolean adjustBalance(int deltaBal);
+    public abstract boolean adjustBalance(int deltaBal);
     
     /**
      * Gets the current amount of credits this {@link IPlayer} has left to play 
@@ -97,7 +144,7 @@ public interface IPlayer
      * @return The number of credits to play with as an int.
      * @since 1.0
      */
-    public int getBalance();
+    public abstract int getBalance();
     
     /**
      * Called when an {@link IPlayer} wins an {@link IClientGame}, specific 
@@ -109,7 +156,7 @@ public interface IPlayer
      * true.
      * @since 1.3
      */
-    public void playerWin(IClientGame game, boolean pontoon);
+    public abstract void playerWin(IClientGame game, boolean pontoon);
     
     /**
      * Called when an {@link IPlayer} loses a {@link IClientGame} to the dealer.
@@ -117,7 +164,7 @@ public interface IPlayer
      * @param game The {@link IClientGame} that was lost.
      * @since 1.3
      */
-    public void dealerWin(IClientGame game);
+    public abstract void dealerWin(IClientGame game);
     
     /**
      * Disconnects this {@link IPlayer} from the specified {@link IClientGame} 
@@ -127,5 +174,5 @@ public interface IPlayer
      * @param game The {@link IClientGame} to stop taking part in.
      * @since 1.0
      */
-    public void leaveGame(IClientGame game);
+    public abstract void leaveGame(IClientGame game);
 }

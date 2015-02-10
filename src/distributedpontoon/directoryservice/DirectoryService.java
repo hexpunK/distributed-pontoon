@@ -2,6 +2,7 @@ package distributedpontoon.directoryservice;
 
 import distributedpontoon.server.Server;
 import distributedpontoon.shared.NetMessage.MessageType;
+import distributedpontoon.shared.Pair;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
@@ -9,7 +10,9 @@ import java.net.InetAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Scanner;
+import java.util.Set;
 
 /**
  *
@@ -32,7 +35,7 @@ public class DirectoryService implements Runnable
     /** A thread to run {@link DirectoryService} in the background. */
     private Thread serverThread;
     /** A mapping of known host names to their ports. */
-    private HashMap<String, Integer> knownHosts;
+    private Set<Pair<String, Integer>> knownHosts;
     
     private DirectoryService()
     {
@@ -40,7 +43,7 @@ public class DirectoryService implements Runnable
         this.hostName = "UNKNOWN";
         this.server = null;
         this.serverThread = null;
-        this.knownHosts = new HashMap<>();
+        this.knownHosts = new HashSet<>();
     }
     
     private DirectoryService(int port) throws IllegalArgumentException
@@ -55,7 +58,7 @@ public class DirectoryService implements Runnable
         this.hostName = "UNKNOWN";
         this.server = null;
         this.serverThread = null;
-        this.knownHosts = new HashMap<>();
+        this.knownHosts = new HashSet<>();
     }
     
     public synchronized static DirectoryService getInstance()
@@ -102,14 +105,22 @@ public class DirectoryService implements Runnable
     
     public void addServer(String hostName, int port)
     {
-        knownHosts.put(hostName, port);
+        knownHosts.add(new Pair<>(hostName, port));
     }
     
-    public HashMap<String, Integer> getKnownHosts() { return knownHosts; }
+    public Set<Pair<String, Integer>> getKnownHosts() { return knownHosts; }
     
-    public void removeServer(String hostName)
+    public void removeServer(String hostName, int port)
     {
-        knownHosts.remove(hostName);
+        Pair toRemove = null;
+        for (Pair pair : knownHosts) {
+            if (pair.getLeft().equals(hostName) && pair.getRight().equals(port))
+            {
+                toRemove = pair;
+                break;
+            }
+        }
+        if (toRemove != null) knownHosts.remove(toRemove);
     }
     
     /**
@@ -168,7 +179,7 @@ public class DirectoryService implements Runnable
                         System.out.println("Registering server...");
                         String remoteName = input.readUTF();
                         int remotePort = input.readInt();
-                        knownHosts.put(remoteName, remotePort);
+                        addServer(remoteName, remotePort);
                         System.out.printf("Registerd server %s:%d\n", 
                                 remoteName, remotePort);
                         break;

@@ -2,16 +2,10 @@ package distributedpontoon.client;
 
 import distributedpontoon.shared.Hand;
 import distributedpontoon.shared.IClientGame;
-import distributedpontoon.shared.NetMessage;
-import distributedpontoon.shared.NetMessage.MessageType;
-import java.io.IOException;
-import java.io.ObjectInputStream;
-import java.io.ObjectOutputStream;
-import java.net.InetAddress;
-import java.net.Socket;
-import java.net.UnknownHostException;
+import distributedpontoon.shared.Pair;
 import java.util.HashMap;
 import java.util.Random;
+import java.util.Set;
 
 /**
  * An automated Pontoon player. This player will use the same tactic each game, 
@@ -20,7 +14,7 @@ import java.util.Random;
  * 
  * @author 6266215
  */
-public class RoboPlayer implements IPlayer
+public class RoboPlayer extends IPlayer
 {
     /** The threshold for twisting for this {@link RoboPlayer}. */
     private final int threshold;
@@ -28,10 +22,6 @@ public class RoboPlayer implements IPlayer
     private final HashMap<IClientGame, Thread> games;
     /** A mapping of {@link IClientGame}s to the player ID for each game. */
     private final HashMap<IClientGame, Integer> playerIDs;
-    /** The remaining credits this {@link RoboPlayer} can bet with.  */
-    private int balance;
-    /** Indicates whether or not this {@link RoboPlayer} is still playing. */
-    private boolean playing;
     
     /**
      * Creates a new {@link RoboPlayer} with a randomised threshold value and 
@@ -51,32 +41,11 @@ public class RoboPlayer implements IPlayer
     @Override
     public void init()
     {
-        HashMap<String, Integer> servers = new HashMap<>();
-        String serverName = "CMPLAB2-04";
-        int directoryPort = 55552;
-        Socket directorySocket;
-        try {
-            InetAddress address = InetAddress.getByName(serverName);
-            directorySocket = new Socket(address, directoryPort);
-            ObjectOutputStream output = new ObjectOutputStream(directorySocket.getOutputStream());
-            ObjectInputStream input = new ObjectInputStream(directorySocket.getInputStream());
-            
-            output.writeObject(MessageType.QUERY_SERVERS);
-            output.flush();
-            MessageType reply = (MessageType)input.readObject();
-            if (reply == MessageType.QUERY_SERVERS) {
-                servers = (HashMap)input.readObject();
-            }
-        } catch (UnknownHostException hostEx) {
-            System.err.println(hostEx.getMessage());
-        } catch (IOException ioEx) {
-            System.err.println(ioEx.getMessage());
-        } catch (ClassNotFoundException cnfEx) {
-            System.err.println(cnfEx.getMessage());
-        }
-        //String[] addresses = new String[]{"CMPLAB2-04", "CMPLAB2-03", "CMPLAB1-15"};
-        for (String address : servers.keySet()) {
-            int tmpPort = servers.get(address);
+        Set<Pair<String, Integer>> servers = findServers();
+        if (servers == null || servers.isEmpty()) return;
+        for (Pair server : servers) {
+            String address = (String)server.getLeft();
+            int tmpPort = (int)server.getRight();
             IClientGame game = new ClientGame(this, 50, address, tmpPort);
             Thread t = new Thread(game);
             games.put(game, t);
