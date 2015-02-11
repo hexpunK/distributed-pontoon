@@ -9,7 +9,6 @@ import java.io.ObjectOutputStream;
 import java.net.InetAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Scanner;
 import java.util.Set;
@@ -17,6 +16,7 @@ import java.util.Set;
 /**
  *
  * @author 6266215
+ * @version 1.0
  */
 public class DirectoryService implements Runnable
 {
@@ -25,6 +25,7 @@ public class DirectoryService implements Runnable
      * per process.
      */
     private static DirectoryService INSTANCE;
+    /** Monitors the known servers and removes unresponsive ones. */
     private ServerPoller monitor;
     /** The TCP port to listen for connections on. */
     private final int port;
@@ -114,7 +115,7 @@ public class DirectoryService implements Runnable
     {
         Pair toRemove = null;
         for (Pair pair : knownHosts) {
-            if (pair.getLeft().equals(hostName) && pair.getRight().equals(port))
+            if (pair.Left.equals(hostName) && pair.Right.equals(port))
             {
                 toRemove = pair;
                 break;

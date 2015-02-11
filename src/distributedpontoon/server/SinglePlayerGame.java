@@ -281,10 +281,21 @@ public class SinglePlayerGame extends IServerGame
                         gameError("Unknown message sent to game:\n\t%s", reply);
                 }
             }
-        } catch (IOException ioEx) {
-            gameError(ioEx.getMessage());
-        } catch (ClassNotFoundException cnfEx) {
-            gameError(cnfEx.getMessage());
+        } catch (IOException | ClassNotFoundException ioEx) {
+            gameError("Error handling single player game. Reason:\n%s", 
+                    ioEx.getMessage());
+        } finally {
+            try {
+                if (input != null)
+                    input.close();
+                if (output != null)
+                    output.close();
+                if (socket != null)
+                    socket.close();
+            } catch (IOException ex) {
+                gameError("Failed to close game safely. Reason:\n%s", 
+                        ex.getMessage());
+            }
         }
     }
 }

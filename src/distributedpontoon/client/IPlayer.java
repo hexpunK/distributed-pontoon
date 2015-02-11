@@ -1,5 +1,7 @@
 package distributedpontoon.client;
 
+import distributedpontoon.directoryservice.DirectoryService;
+import distributedpontoon.server.Server;
 import distributedpontoon.shared.IClientGame;
 import distributedpontoon.shared.NetMessage.MessageType;
 import distributedpontoon.shared.Pair;
@@ -9,7 +11,6 @@ import java.io.ObjectOutputStream;
 import java.net.InetAddress;
 import java.net.Socket;
 import java.net.UnknownHostException;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Set;
 
@@ -36,6 +37,14 @@ public abstract class IPlayer
      */
     public abstract void init();
     
+    /**
+     * Attempts to connect to the specified {@link DirectoryService} to let this
+     *  {@link IPlayer} find any active {@link Server}s.
+     * 
+     * @return A {@link Set} of unique hostname-port number {@link Pair}s. This 
+     * can be empty.
+     * @since 1.3
+     */
     public Set<Pair<String, Integer>> findServers()
     {
         Set<Pair<String, Integer>> servers = new HashSet<>();

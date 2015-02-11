@@ -41,7 +41,7 @@ public class Deck
      */
     public final void createDeck() 
     { 
-        cards.addAll(Arrays.asList(Card.values()));
+        cards.addAll(Card.ALL_CARDS);
     }
 
     /**

@@ -1,72 +1,20 @@
 package distributedpontoon.shared;
 
 import java.io.Serializable;
+import java.util.HashSet;
+import java.util.Set;
 
 /**
  * Represents a standard playing card. Cards can have values ranging from Ace to
  *  King (represented in {@link CardRank}), and must be one of the suits 
- * (represented in {@link CardSuit}). This enumeration contains a reference to 
- * each possible card as of version 1.2.
+ * (represented in {@link CardSuit}). Once created a Card instance is immutable.
  * 
  * @author 6266215
- * @version 1.2
- * @since 2015-02-09
+ * @version 1.1
+ * @since 2015-02-03
  */
-public enum Card implements Serializable
+public class Card implements Serializable
 {    
-    ACE_OF_SPADES(CardSuit.SPADES, Card.CardRank.ACE),
-    TWO_OF_SPADES(CardSuit.SPADES, Card.CardRank.TWO),
-    THREE_OF_SPADES(CardSuit.SPADES, Card.CardRank.THREE),
-    FOUR_OF_SPADES(CardSuit.SPADES, Card.CardRank.FOUR),
-    FIVE_OF_SPADES(CardSuit.SPADES, Card.CardRank.FIVE),
-    SIX_OF_SPADES(CardSuit.SPADES, Card.CardRank.SIX),
-    SEVEN_OF_SPADES(CardSuit.SPADES, Card.CardRank.SEVEN),
-    EIGHT_OF_SPADES(CardSuit.SPADES, Card.CardRank.EIGHT),
-    NINE_OF_SPADES(CardSuit.SPADES, Card.CardRank.NINE),
-    TEN_OF_SPADES(CardSuit.SPADES, Card.CardRank.TEN),
-    JACK_OF_SPADES(CardSuit.SPADES, Card.CardRank.JACK),
-    QUEEN_OF_SPADES(CardSuit.SPADES, Card.CardRank.QUEEN),
-    KING_OF_SPADES(CardSuit.SPADES, Card.CardRank.KING),
-    ACE_OF_HEARTS(CardSuit.HEARTS, Card.CardRank.ACE),
-    TWO_OF_HEARTS(CardSuit.HEARTS, Card.CardRank.TWO),
-    THREE_OF_HEARTS(CardSuit.HEARTS, Card.CardRank.THREE),
-    FOUR_OF_HEARTS(CardSuit.HEARTS, Card.CardRank.FOUR),
-    FIVE_OF_HEARTS(CardSuit.HEARTS, Card.CardRank.FIVE),
-    SIX_OF_HEARTS(CardSuit.HEARTS, Card.CardRank.SIX),
-    SEVEN_OF_HEARTS(CardSuit.HEARTS, Card.CardRank.SEVEN),
-    EIGHT_OF_HEARTS(CardSuit.HEARTS, Card.CardRank.EIGHT),
-    NINE_OF_HEARTS(CardSuit.HEARTS, Card.CardRank.NINE),
-    TEN_OF_HEARTS(CardSuit.HEARTS, Card.CardRank.TEN),
-    JACK_OF_HEARTS(CardSuit.HEARTS, Card.CardRank.JACK),
-    QUEEN_OF_HEARTS(CardSuit.HEARTS, Card.CardRank.QUEEN),
-    KING_OF_HEARTS(CardSuit.HEARTS, Card.CardRank.KING),
-    ACE_OF_CLUBS(CardSuit.CLUBS, Card.CardRank.ACE),
-    TWO_OF_CLUBS(CardSuit.CLUBS, Card.CardRank.TWO),
-    THREE_OF_CLUBS(CardSuit.CLUBS, Card.CardRank.THREE),
-    FOUR_OF_CLUBS(CardSuit.CLUBS, Card.CardRank.FOUR),
-    FIVE_OF_CLUBS(CardSuit.CLUBS, Card.CardRank.FIVE),
-    SIX_OF_CLUBS(CardSuit.CLUBS, Card.CardRank.SIX),
-    SEVEN_OF_CLUBS(CardSuit.CLUBS, Card.CardRank.SEVEN),
-    EIGHT_OF_CLUBS(CardSuit.CLUBS, Card.CardRank.EIGHT),
-    NINE_OF_CLUBS(CardSuit.CLUBS, Card.CardRank.NINE),
-    TEN_OF_CLUBS(CardSuit.CLUBS, Card.CardRank.TEN),
-    JACK_OF_CLUBS(CardSuit.CLUBS, Card.CardRank.JACK),
-    QUEEN_OF_CLUBS(CardSuit.CLUBS, Card.CardRank.QUEEN),
-    KING_OF_CLUBS(CardSuit.CLUBS, Card.CardRank.KING),
-    ACE_OF_DIAMONDS(CardSuit.DIAMONDS, Card.CardRank.ACE),
-    TWO_OF_DIAMONDS(CardSuit.DIAMONDS, Card.CardRank.TWO),
-    THREE_OF_DIAMONDS(CardSuit.DIAMONDS, Card.CardRank.THREE),
-    FOUR_OF_DIAMONDS(CardSuit.DIAMONDS, Card.CardRank.FOUR),
-    FIVE_OF_DIAMONDS(CardSuit.DIAMONDS, Card.CardRank.FIVE),
-    SIX_OF_DIAMONDS(CardSuit.DIAMONDS, Card.CardRank.SIX),
-    SEVEN_OF_DIAMONDS(CardSuit.DIAMONDS, Card.CardRank.SEVEN),
-    EIGHT_OF_DIAMONDS(CardSuit.DIAMONDS, Card.CardRank.EIGHT),
-    NINE_OF_DIAMONDS(CardSuit.DIAMONDS, Card.CardRank.NINE),
-    TEN_OF_DIAMONDS(CardSuit.DIAMONDS, Card.CardRank.TEN),
-    JACK_OF_DIAMONDS(CardSuit.DIAMONDS, Card.CardRank.JACK),
-    QUEEN_OF_DIAMONDS(CardSuit.DIAMONDS, Card.CardRank.QUEEN),
-    KING_OF_DIAMONDS(CardSuit.DIAMONDS, Card.CardRank.KING);
-    
     /**
      * An enumeration of the valid values for cards in a standard playing card 
      * deck. Each enumerated value has an integer value corresponding to the 
@@ -95,14 +43,7 @@ public enum Card implements Serializable
         private final int value;
         /** Serialisation ID. */
         private static final long serialVersionUID = 1L;
-        /**
-         * Creates a new CardRank enumeration value with the specified point 
-         * value.
-         * 
-         * @param points The number of points this {@link CardRank} is worth as 
-         * an int.
-         * @since 1.0
-         */
+        
         CardRank(int points)
         { 
             this.value = points;
@@ -127,8 +68,34 @@ public enum Card implements Serializable
         private static final long serialVersionUID = 1L;
     }
     
+    /**
+     * A {@link Set} of all possible {@link Card} objects based on the 
+     * combinations provided from using the {@link CardRank} and 
+     * {@link CardSuit} enumerations.
+     * 
+     * @since 1.0
+     */
+    public static final Set<Card> ALL_CARDS;
     /** Serialisation ID. */
     private static final long serialVersionUID = 1L;
+    
+    static {
+        // Static initialiser to give us all possible cards.
+        ALL_CARDS = new HashSet<>();
+        int count = 0;
+        for (Card.CardSuit suit : Card.CardSuit.values()) {
+            for (Card.CardRank rank : Card.CardRank.values()) {
+                ALL_CARDS.add(new Card(suit, rank));
+                count++;
+            }
+        }
+        if (count < 52) {
+            // Ensure a full set of cards.
+            System.err.println("Failed to create all 52 cards!");
+            System.exit(-1);
+        } 
+    }
+    
     /** The suit of this card as a {@link CardSuit} value. */
     public final CardSuit Suit;
     /** The point value of the card as a {@link CardRank}. */
@@ -143,7 +110,7 @@ public enum Card implements Serializable
      * @param rank The point value of this Card as a {@link CardRank} value.
      * @since 1.0
      */
-    private Card(CardSuit suit, CardRank rank)
+    public Card(CardSuit suit, CardRank rank)
     {
         this.Suit = suit;
         this.Rank = rank;
@@ -207,5 +174,20 @@ public enum Card implements Serializable
     public String toString()
     {
         return String.format("%s (%d)", getName(), getValue());
+    }
+
+    @Override
+    public int hashCode()
+    {
+        return (Rank.hashCode() ^ Suit.hashCode());
+    }
+
+    @Override
+    public boolean equals(Object obj) 
+    {
+        if (obj == null) return false;
+        if (!(obj instanceof Card)) return false;
+        Card other = (Card)obj;
+        return (other.Rank == this.Rank && other.Suit == this.Suit);
     }
 }

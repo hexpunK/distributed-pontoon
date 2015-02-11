@@ -1,5 +1,6 @@
 package distributedpontoon.shared;
 
+import distributedpontoon.directoryservice.DirectoryService;
 import distributedpontoon.shared.IServerGame;
 import java.io.Serializable;
 
@@ -23,8 +24,11 @@ public class NetMessage<T> implements Serializable {
      */
     public static enum MessageType implements Serializable
     {
+        /** Sent to a {@link DirectoryService} to store this server on it. */
         REGISTER_SERVER,
+        /** Sent to a {@link DirectoryService} to request a list of servers. */
         QUERY_SERVERS,
+        /** Sent from a {@link DirectoryService} to see if servers are up. */
         POLL_SERVER,
         /** Sent by a client when it requests to play an {@link IServerGame} */
         CLIENT_JOIN,

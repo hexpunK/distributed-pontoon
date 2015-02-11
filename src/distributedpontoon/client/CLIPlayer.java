@@ -5,9 +5,12 @@ import distributedpontoon.shared.Card.CardRank;
 import distributedpontoon.shared.IClientGame;
 import distributedpontoon.shared.Hand;
 import distributedpontoon.shared.NetMessage.MessageType;
+import distributedpontoon.shared.Pair;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.InputMismatchException;
 import java.util.Scanner;
+import java.util.Set;
 
 /**
  * Allows a human to play a game of Pontoon through the command line interface 
@@ -46,14 +49,49 @@ public class CLIPlayer extends HumanPlayer
     public void init()
     {
         playing = true;
-        String line;
-        String svr = "localhost";
-        int port = 55551;
+        String line = "";
+        String svr = "";
+        int port = -1;
         
         while (playing) {
             System.out.println("What would you like to do?");
             line = input.nextLine().trim();
             switch(line) {
+                case "servers":
+                    // Let the user pick from a list of known servers.
+                    Set<Pair<String, Integer>> svrSet = findServers();
+                    Pair<String, Integer>[] servers = svrSet.toArray(new Pair[svrSet.size()]);
+                    if (servers.length == 0) {
+                        System.out.println("No servers found.");
+                        return;
+                    }
+                    System.out.println("Servers available:");
+                    int i;
+                    for (i = 0; i < servers.length; i++) {
+                        System.out.printf(
+                                "\t%d - %s:%d\n", 
+                                i+1, servers[i].Left, servers[i].Right
+                        );
+                    }
+                    System.out.println("Enter server number: ");
+                    String r = input.nextLine();
+                    // Attempt to convert the input into a number.
+                    int serverNum;
+                    try {
+                        serverNum = Integer.parseInt(r);
+                    } catch (NumberFormatException nfEx) {
+                        System.out.println("You can only use numbers!");
+                        continue;
+                    }
+                    if (serverNum <= 0 || serverNum > i) {
+                        System.out.printf("You can only enter 1-%d.\n", i);
+                        continue;
+                    }
+                    serverNum--; // Change the number to an index.
+                    // Select the server at the specified index.
+                    svr = servers[serverNum].Left;
+                    port = servers[serverNum].Right;
+                    break;
                 case "s":
                 case "server":
                     System.out.println("Enter new server address/name:");
@@ -66,6 +104,10 @@ public class CLIPlayer extends HumanPlayer
                     break;
                 case "p":
                 case "play":
+                    if (svr.isEmpty() || port == -1) {
+                        System.out.println("Please select a server!");
+                        continue;
+                    }
                     game = new ClientGame(this, bet, svr, port);
                     startGame();
                     try {
@@ -207,7 +249,7 @@ public class CLIPlayer extends HumanPlayer
         if (aces.size() > 0) {
             /* Let the user change the value of aces. */
             System.out.printf("You have %d aces.\n", aceCount);
-            System.out.println("Select an ace to switch ('no' to exit):");
+            System.out.println("Select an ace to switch ('no' to stop):");
             String r = input.nextLine();
             switch (r) {
                 case "no":
@@ -224,7 +266,8 @@ public class CLIPlayer extends HumanPlayer
                         return;
                     }
                     if (aceNum <= 0 || aceNum > aceCount) {
-                        System.out.printf("You can only enter 1-%d.", aceCount);
+                        System.out.printf("You can only enter 1-%d.\n", 
+                                aceCount);
                         return;
                     }
                     aceNum--;

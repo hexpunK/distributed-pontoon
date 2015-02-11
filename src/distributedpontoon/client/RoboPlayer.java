@@ -1,5 +1,6 @@
 package distributedpontoon.client;
 
+import distributedpontoon.shared.Card;
 import distributedpontoon.shared.Hand;
 import distributedpontoon.shared.IClientGame;
 import distributedpontoon.shared.Pair;
@@ -44,8 +45,8 @@ public class RoboPlayer extends IPlayer
         Set<Pair<String, Integer>> servers = findServers();
         if (servers == null || servers.isEmpty()) return;
         for (Pair server : servers) {
-            String address = (String)server.getLeft();
-            int tmpPort = (int)server.getRight();
+            String address = (String)server.Left;
+            int tmpPort = (int)server.Right;
             IClientGame game = new ClientGame(this, 50, address, tmpPort);
             Thread t = new Thread(game);
             games.put(game, t);
@@ -85,6 +86,16 @@ public class RoboPlayer extends IPlayer
     {
         if (caller.getHand().total() < threshold) {
             caller.twist();
+            Hand hand = caller.getHand();
+            // Attempt to make Aces high if it will help the score.
+            for (Card card : hand.getCards()) {
+                if (card.Rank == Card.CardRank.ACE
+                        && !card.isAceHigh()
+                        && (hand.total() + 10) <= 21) {
+                    System.out.println("Making an ace high.");
+                    card.setAceHigh(!card.isAceHigh());
+                }
+            }
         } else {
             caller.stand();
         }

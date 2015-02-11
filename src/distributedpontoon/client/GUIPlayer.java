@@ -1,5 +1,6 @@
 package distributedpontoon.client;
 
+import distributedpontoon.client.gui.ClientGUI;
 import distributedpontoon.shared.IClientGame;
 import java.awt.event.ComponentAdapter;
 import java.awt.event.ComponentEvent;
@@ -33,14 +34,12 @@ public class GUIPlayer extends HumanPlayer
     {
         final GUIPlayer ply = this;
         playing = true;
-        game = new ClientGame(this, bet, "localhost", 55551);
         SwingUtilities.invokeLater(new Runnable() 
         {
             @Override
             public void run() 
             {
-                gui = new ClientGUI(ply);
-                gui.setGame(game);
+                gui = ClientGUI.getInstance(ply);
                 gui.updateBet();
                 gui.addComponentListener(new ComponentAdapter()
                 {
@@ -59,6 +58,13 @@ public class GUIPlayer extends HumanPlayer
     @Override
     public void startGame()
     {
+        if (game == null) {
+            JOptionPane.showMessageDialog(gui, 
+                    "Please join a server.", 
+                    "Error!", 
+                    JOptionPane.ERROR_MESSAGE);
+            return;
+        }
         super.startGame();
         /* Sleep the thread for a few ms to let some values update. */
         try {
@@ -83,7 +89,7 @@ public class GUIPlayer extends HumanPlayer
                 }
             });
             while (!gui.isTurnTaken()) { }
-            Thread.sleep(100); // Let the hand update before updating the GUI.
+            Thread.sleep(200); // Let the hand update before updating the GUI.
             SwingUtilities.invokeLater(new Runnable()
             {
                 @Override

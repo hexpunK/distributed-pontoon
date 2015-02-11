@@ -8,12 +8,13 @@ import java.io.ObjectOutputStream;
 import java.net.InetAddress;
 import java.net.Socket;
 import java.net.UnknownHostException;
-import java.util.HashMap;
+import java.util.ArrayList;
 import java.util.Set;
 
 /**
  *
  * @author 6266215
+ * @version 1.0
  */
 public class ServerPoller implements Runnable
 {
@@ -36,36 +37,57 @@ public class ServerPoller implements Runnable
         running = true;
         while (running) {
             try {
-                Thread.sleep(10000);
+                Thread.sleep(10000); // Poll every 10 seconds.
             } catch (InterruptedException ex) {
                 System.err.printf("ServerPoller failed to sleep:\n%s\n",
                         ex.getMessage());
             }
-            System.out.println("Polling servers.");
             Set<Pair<String, Integer>> hosts = directory.getKnownHosts();
+            ArrayList<Pair<String, Integer>> toRemove = new ArrayList<>();
+            /* Check each server that we are already aware of. */
             for (final Pair host : hosts) {
-                final String name = (String)host.getLeft();
-                final int port = (int)host.getRight();
-                Socket tmpSocket;
+                String name = (String)host.Left;
+                int port = (int)host.Right;
+                Socket tmpSocket = null;
+                ObjectOutputStream out = null;
+                ObjectInputStream input = null;
                 try {
+                    // Send a polling message to the running servers.
                     InetAddress address = InetAddress.getByName(name);
                     tmpSocket = new Socket(address, port);
-                    ObjectOutputStream output = new ObjectOutputStream(tmpSocket.getOutputStream());
-                    output.writeObject(MessageType.POLL_SERVER);
+                    out = new ObjectOutputStream(tmpSocket.getOutputStream());
+                    out.writeObject(MessageType.POLL_SERVER);
                     
-                    ObjectInputStream input = new ObjectInputStream(tmpSocket.getInputStream());
-                    output.flush();
-                    boolean reply = input.readBoolean();
+                    input = new ObjectInputStream(tmpSocket.getInputStream());
+                    out.flush();
+                    input.readBoolean();
+                    // If any exceptions are thrown, remove the server.
                 } catch (UnknownHostException hostEx) {
-                    directory.removeServer(name, port);
+                    toRemove.add(host);
                     System.out.printf("Host %s does not seem to exist, "
                             + "removing.\n%s\n", name, hostEx.getMessage());
                 } catch (IOException ioEx) {
-                    directory.removeServer(name, port);
+                    toRemove.add(host);
                     System.out.printf("Could not communicate with "
                             + "server %s, removing.\n%s\n", 
                             name, ioEx.getMessage());
+                } finally {
+                    try {
+                        if (input != null)
+                            input.close();
+                        if (out != null)
+                            out.close();
+                        if (tmpSocket != null)
+                            tmpSocket.close();
+                    } catch (IOException ex) {
+                        System.err.printf("Could not close polling socket.\n%s",
+                                ex.getMessage());
+                    }
                 }
+            }
+            /* Remove any servers that were lost whilst polling. */
+            for (Pair host : toRemove) {
+                directory.removeServer((String)host.Left, (int)host.Right);
             }
         }
     }
