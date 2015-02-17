@@ -9,7 +9,7 @@ import distributedpontoon.shared.Card;
  * implementation for a {@link IPlayer}.
  * 
  * @author 6266215
- * @version 1.0
+ * @version 1.1
  * @since 2015-02-04
  */
 public abstract class IClientGame extends IGame {
@@ -41,6 +41,14 @@ public abstract class IClientGame extends IGame {
      * @since 1.0
      */
     public abstract Hand getHand();
+    
+    /**
+     * Gets the {@link Hand} the dealer has at the end of a game.
+     * 
+     * @return A {@link Hand} object for the dealer.
+     * @since 1.1
+     */
+    public abstract Hand getDealerHand();
     
     /**
      * Checks to see whether this {@link IClientGame} is still connected to the 

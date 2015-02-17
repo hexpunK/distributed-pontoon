@@ -37,13 +37,16 @@ public class ClientGUI extends JFrame
     private static ClientGUI INSTANCE;
     private IClientGame game;
     private final IPlayer player;
-    private final JPanel cardPanel, buttonPanel, infoPanel;
+    private final JPanel cardPanel, playerCards, dealerCards, buttonPanel, infoPanel;
     private final JButton[] menuButtons;
     private final JButton[] playButtons;
     private final JLabel playerScore, playerBal, playerBet, gameInfo;
     private final HashMap<Card, ImageIcon> cardIcons;
     private boolean turnTaken;
     private final Dimension buttonSize = new Dimension(150, 75);
+    
+    public static final boolean PLAYER = true;
+    public static final boolean DEALER = false;
     
     private ClientGUI(IPlayer player)
     {
@@ -56,6 +59,8 @@ public class ClientGUI extends JFrame
                     c.getName());
             cardIcons.put(c, img);
         }
+        ImageIcon noCard = createImageIcon(path+"back.png", "Back");
+        cardIcons.put(null, noCard);
         
         try {
             UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
@@ -67,7 +72,7 @@ public class ClientGUI extends JFrame
         }
         
         this.setTitle("Pontoon Client");
-        this.setSize(new Dimension(500, 200));
+        this.setSize(new Dimension(500, 350));
         this.setResizable(false);
         this.setLayout(new BorderLayout());
         this.setDefaultCloseOperation(JFrame.HIDE_ON_CLOSE);
@@ -128,8 +133,16 @@ public class ClientGUI extends JFrame
         this.gameInfo.setVisible(true);
         
         this.cardPanel = new JPanel();
-        this.cardPanel.setLayout(new FlowLayout(FlowLayout.CENTER, 10, 10));
+        this.cardPanel.setLayout(new BorderLayout());
         this.cardPanel.add(gameInfo);
+        
+        this.playerCards = new JPanel();
+        this.playerCards.setLayout(new FlowLayout(FlowLayout.CENTER, 10, 10));
+        this.cardPanel.add(playerCards, BorderLayout.SOUTH);
+        
+        this.dealerCards = new JPanel();
+        this.dealerCards.setLayout(new FlowLayout(FlowLayout.CENTER, 10, 10));
+        this.cardPanel.add(dealerCards, BorderLayout.NORTH);
         
         this.buttonPanel = new JPanel();
         this.buttonPanel.setLayout(new FlowLayout());
@@ -193,9 +206,12 @@ public class ClientGUI extends JFrame
             playerBet.setText("Join a game first!");
     }
     
-    public synchronized void setHand(Hand hand)
+    public synchronized void setHand(Hand hand, boolean dealer)
     {
-        cardPanel.removeAll();
+        if (dealer == DEALER)
+            dealerCards.removeAll();
+        else
+            playerCards.removeAll();
         Card[] cards = hand.getCards().toArray(new Card[hand.size()]);
         for (Card card : cards) {
             JButton cardButton = new JButton();
@@ -207,12 +223,12 @@ public class ClientGUI extends JFrame
                             icon.getIconHeight()
                     ));
             cardButton.setVisible(true);
-            cardButton.setActionCommand(card.getName());
             cardButton.setBorderPainted(false);
             cardButton.setContentAreaFilled(false);
             cardButton.setBorder(null);
             cardButton.setMargin(new Insets(0, 0, 0, 0));
-            if (card.Rank == CardRank.ACE) {
+            if (dealer == PLAYER && card.Rank == CardRank.ACE) {
+                cardButton.setActionCommand(card.getName());
                 cardButton.setEnabled(true);
                 cardButton.addActionListener(new ActionListener() 
                 {
@@ -232,10 +248,16 @@ public class ClientGUI extends JFrame
                     }
                 });
             }
-            cardPanel.add(cardButton);
+            if (dealer == DEALER) {
+                dealerCards.add(cardButton);
+            } else {
+                playerCards.add(cardButton);
+                playerScore.setText(String.format("Player Score: %d", 
+                        hand.total()));
+            }
+            dealerCards.updateUI();
+            playerCards.updateUI();
         }
-        playerScore.setText(String.format("Player Score: %d", hand.total()));
-        cardPanel.updateUI();
     }
     
     public void joinGame()
@@ -245,11 +267,14 @@ public class ClientGUI extends JFrame
             button.setVisible(false);
         for (JButton button : playButtons)
             button.setVisible(true);
-        setHand(game.getHand());
+        setHand(game.getHand(), PLAYER);
         playerBet.setText(String.format("Bet: %d", game.getBet()));
         playerBal.setText(String.format("Player Balance: %d", 
                 player.getBalance()));
-        
+        Hand tmpDlrHand = new Hand();
+        tmpDlrHand.addCard(null);
+        tmpDlrHand.addCard(null);
+        setHand(tmpDlrHand, DEALER);
     }
     
     public void readyTurn()
@@ -261,7 +286,7 @@ public class ClientGUI extends JFrame
     
     public void endTurn()
     {
-        setHand(game.getHand());
+        setHand(game.getHand(), PLAYER);
         for (JButton button : playButtons)
             button.setEnabled(false);
     }
@@ -270,8 +295,11 @@ public class ClientGUI extends JFrame
     
     public void leaveGame()
     {
-        setHand(new Hand());
+        setHand(new Hand(), PLAYER);
+        setHand(new Hand(), DEALER);
         gameInfo.setVisible(true);
+        playerCards.removeAll();
+        dealerCards.removeAll();
         cardPanel.add(gameInfo);
         for (JButton button : playButtons)
             button.setVisible(false);

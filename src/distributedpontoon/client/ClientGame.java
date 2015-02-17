@@ -23,7 +23,7 @@ public class ClientGame extends IClientGame
     private Socket connection;
     private ObjectOutputStream output;
     private final IPlayer player;
-    private Hand hand;
+    private Hand hand, dealerHand;
     private int bet;
     
     public ClientGame(IPlayer player, int bet)
@@ -93,6 +93,9 @@ public class ClientGame extends IClientGame
     
     @Override
     public synchronized Hand getHand() { return hand; }
+    
+    @Override
+    public synchronized Hand getDealerHand() { return dealerHand; }
     
     @Override
     public boolean isConnected()
@@ -280,7 +283,7 @@ public class ClientGame extends IClientGame
                         // Give the player their winnings and end the game.
                         gameMessage("Game over!");
                         boolean winner = input.readBoolean();
-                        Hand dealerHand = (Hand)input.readObject();
+                        dealerHand = (Hand)input.readObject();
                         gameMessage("Player hand:\n%s", hand);
                         gameMessage("Dealer hand:\n%s", dealerHand);
                         if (winner == PLAYER_WIN) {

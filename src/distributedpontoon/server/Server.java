@@ -40,6 +40,10 @@ public class Server implements Runnable
     private ServerSocket server;
     /** A thread to allow this {@link Server} to run in the background. */
     private Thread serverThread;
+    /** The hostname of the directory server. */
+    private String dirServer;
+    /** The port of the directory server. */
+    private int dirPort;
     /** A mapping of {@link IServerGame} instances to their executing thread. */
     private final HashMap<IServerGame, Thread> games;
     
@@ -117,6 +121,12 @@ public class Server implements Runnable
             Server.INSTANCE = new Server(port);
         }        
         return Server.INSTANCE;
+    }
+    
+    public void setDirectoryServer(String dirName, int dirPortNum)
+    {
+        this.dirServer = dirName;
+        this.dirPort = dirPortNum;
     }
     
     /**
@@ -226,7 +236,7 @@ public class Server implements Runnable
     @Override
     public void run()
     {
-        String serverName = "localhost";
+        String serverName = dirServer;
         int directoryPort = 55552;
         Socket directorySocket;
         try {
@@ -301,6 +311,8 @@ public class Server implements Runnable
     public static void main(String[] args)
     {        
         Integer port = null;
+        String dirServerName = "localhost";
+        int dirServerPort = 55552;
         /* handle the command line parameters if any were passed. */
         for (int i = 0; i < args.length; i++) {
             switch(args[i]) {
@@ -312,6 +324,19 @@ public class Server implements Runnable
                         i++;
                     } catch (NumberFormatException nEx) {
                         System.err.println("Port value must be a number.");
+                    }
+                    break;
+                case "--dir-server":
+                    String[] parts = args[++i].split(":");
+                    if (parts.length == 1) {
+                        dirServerName = parts[0];
+                    } else {
+                        try {
+                            dirServerName = parts[0];
+                            dirServerPort = Integer.parseInt(parts[1]);
+                        } catch (NumberFormatException nfEx) {
+                            System.err.println("Port value must be a number.");
+                        }
                     }
                     break;
                 case "-h":
@@ -337,6 +362,7 @@ public class Server implements Runnable
             server = Server.getInstance();
         }
         
+        server.setDirectoryServer(dirServerName, dirServerPort);
         server.init(); // Start running the server.
         
         Scanner input = new Scanner(System.in);

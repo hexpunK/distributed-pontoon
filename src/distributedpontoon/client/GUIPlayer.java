@@ -84,7 +84,7 @@ public class GUIPlayer extends HumanPlayer
                 @Override
                 public void run()
                 {
-                    gui.setHand(game.getHand());
+                    gui.setHand(game.getHand(), ClientGUI.PLAYER);
                     gui.readyTurn();
                 }
             });
@@ -104,9 +104,22 @@ public class GUIPlayer extends HumanPlayer
     }
 
     @Override
-    public void playerWin(IClientGame game, boolean pontoon)
+    public void playerWin(final IClientGame game, boolean pontoon)
     {
         String msg;
+        try {
+            SwingUtilities.invokeAndWait(new Runnable()
+            {
+                @Override
+                public void run()
+                {
+                    gui.setHand(game.getDealerHand(), ClientGUI.DEALER);
+                    gui.setHand(game.getHand(), ClientGUI.PLAYER);
+                }
+            });
+        } catch (InterruptedException | InvocationTargetException ex ) {
+            System.err.println(ex.getMessage());
+        }
         if (pontoon) {
             msg = String.format("You won the hand with a Pontoon!\n"
                         + "Adding %d credits to balance.", 
@@ -125,8 +138,21 @@ public class GUIPlayer extends HumanPlayer
     }
 
     @Override
-    public void dealerWin(IClientGame game)
+    public void dealerWin(final IClientGame game)
     {
+        try {
+            SwingUtilities.invokeAndWait(new Runnable()
+            {
+                @Override
+                public void run()
+                {
+                    gui.setHand(game.getDealerHand(), ClientGUI.DEALER);
+                    gui.setHand(game.getHand(), ClientGUI.PLAYER);
+                }
+            });
+        } catch (InterruptedException | InvocationTargetException ex ) {
+            System.err.println(ex.getMessage());
+        }
         JOptionPane.showMessageDialog(
                 null, 
                 String.format("Dealer won the hand. Removing %d credits.", 
