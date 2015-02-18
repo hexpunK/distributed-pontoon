@@ -28,9 +28,7 @@ public class ClientGame extends IClientGame
     
     public ClientGame(IPlayer player, int bet)
     {
-        synchronized(this) { 
-            this.gameID = ++IGame.GameCount;
-        }
+        this.gameID = -1;
         this.port = 50000;
         this.serverName = "localhost";
         this.connection = null;
@@ -42,9 +40,7 @@ public class ClientGame extends IClientGame
     
     public ClientGame(IPlayer player, int bet, String hostName)
     {
-        synchronized(this) { 
-            this.gameID = ++IGame.GameCount;
-        }
+        this.gameID = -1;
         this.port = 50000;
         this.serverName = hostName;
         this.connection = null;
@@ -111,8 +107,14 @@ public class ClientGame extends IClientGame
         try {
             InetAddress address = InetAddress.getByName(serverName);
             connection = new Socket(address, port);
-            ObjectOutputStream out = new ObjectOutputStream(connection.getOutputStream());
-            out.writeObject(MessageType.CLIENT_JOIN);
+            ObjectOutputStream out = 
+                    new ObjectOutputStream(connection.getOutputStream());
+            if (gameID < 0)
+                out.writeObject(MessageType.CLIENT_JOIN_SP);
+            else {
+                out.writeObject(MessageType.CLIENT_JOIN_MP);
+                out.writeInt(gameID);
+            }
             out.flush();
         } catch (UnknownHostException hostEx) {
             gameError(hostEx.getMessage());
@@ -148,7 +150,7 @@ public class ClientGame extends IClientGame
         hand = new Hand();
         player.adjustBalance(-bet);
         try {
-            output.writeObject(MessageType.CLIENT_JOIN);
+            output.writeObject(MessageType.CLIENT_READY);
             output.flush();
         } catch (IOException ex) {
             gameError("Error starting game:\n%s", ex.getMessage());
@@ -250,14 +252,14 @@ public class ClientGame extends IClientGame
                 try {
                     msg = (MessageType)input.readObject();
                 } catch (IOException ex) {
-                    continue;
+                    continue; // No message so keep polling.
                 }
                 
                 switch (msg) {
                     case JOIN_ACKNOWLEDGE:
                         // Set the player and game ID values.
                         player.setPlayerID(this, input.readInt());
-                        //gameID = input.readInt();
+                        gameID = input.readInt();
                         gameMessage("Connected!");
                         startGame();
                         break;

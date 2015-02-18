@@ -35,15 +35,17 @@ import javax.swing.border.MatteBorder;
 public class ClientGUI extends JFrame
 {
     private static ClientGUI INSTANCE;
-    private IClientGame game;
     private final IPlayer player;
-    private final JPanel cardPanel, playerCards, dealerCards, buttonPanel, infoPanel;
+    private final JPanel cardPanel, playerCards, dealerCards, buttonPanel, 
+            infoPanel;
     private final JButton[] menuButtons;
     private final JButton[] playButtons;
     private final JLabel playerScore, playerBal, playerBet, gameInfo;
     private final HashMap<Card, ImageIcon> cardIcons;
-    private boolean turnTaken;
     private final Dimension buttonSize = new Dimension(150, 75);
+    
+    private IClientGame game;
+    private boolean turnTaken;
     
     public static final boolean PLAYER = true;
     public static final boolean DEALER = false;
@@ -185,12 +187,13 @@ public class ClientGUI extends JFrame
         }
     }
     
-    public void setServer(String server, int port)
+    public void setGame(String server, int port, int gameID)
     {
         if (game != null)
             game = new ClientGame(player, game.getBet(), server, port);
         else
             game = new ClientGame(player, 50, server, port);
+        game.setGameID(gameID);
         player.reigsterGame(game);
         gameInfo.setText(String.format(
                 "<html>Connecting to server:<br />%s:%d</html>", 
@@ -262,6 +265,8 @@ public class ClientGUI extends JFrame
     
     public void joinGame()
     {
+        playerCards.setVisible(true);
+        dealerCards.setVisible(true);
         gameInfo.setVisible(false);
         for (JButton button : menuButtons)
             button.setVisible(false);
@@ -295,11 +300,9 @@ public class ClientGUI extends JFrame
     
     public void leaveGame()
     {
-        setHand(new Hand(), PLAYER);
-        setHand(new Hand(), DEALER);
+        playerCards.setVisible(false);
+        dealerCards.setVisible(false);
         gameInfo.setVisible(true);
-        playerCards.removeAll();
-        dealerCards.removeAll();
         cardPanel.add(gameInfo);
         for (JButton button : playButtons)
             button.setVisible(false);

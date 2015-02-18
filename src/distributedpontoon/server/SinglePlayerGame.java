@@ -61,7 +61,7 @@ public class SinglePlayerGame extends IServerGame
         try {            
             output.writeObject(MessageType.JOIN_ACKNOWLEDGE);
             output.writeInt(1);
-            //output.writeInt(gameID);
+            output.writeInt(gameID);
             output.flush();
             gameMessage("Registered player.");
         } catch (IOException ioEx) {
@@ -147,7 +147,7 @@ public class SinglePlayerGame extends IServerGame
     
     public boolean dealerPlay(int plyScore)
     {
-        while (dealer.total() < plyScore) {
+        while (dealer.total() <= 21) {
             int dlrTotal = dealer.total();
             for (Card c : dealer.getCards()) {
                 if (c.Rank == CardRank.ACE) {
@@ -230,7 +230,7 @@ public class SinglePlayerGame extends IServerGame
                 }
                 
                 switch (reply) {
-                    case CLIENT_JOIN:
+                    case CLIENT_READY:
                         // Initialise the game for a connecting client.
                         output.writeObject(MessageType.GAME_INITIALISE);
                         try {

@@ -9,10 +9,18 @@ import distributedpontoon.shared.Card;
  * implementation for a {@link IPlayer}.
  * 
  * @author 6266215
- * @version 1.1
- * @since 2015-02-04
+ * @version 1.2
+ * @since 2015-02-18
  */
 public abstract class IClientGame extends IGame {
+    
+    /**
+     * Sets the ID for this game to the provided value.
+     * 
+     * @param gameID The new game ID number to use.
+     * @since 1.2
+     */
+    public void setGameID(int gameID) { this.gameID = gameID; }
     
     /**
      * Sets the current bet to use in this {@link IClientGame}, the provided 

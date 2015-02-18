@@ -165,7 +165,6 @@ public class GUIPlayer extends HumanPlayer
     @Override
     public void leaveGame(IClientGame game)
     {
-        gui.leaveGame();
         if (this.game != null && this.game.isConnected())
             this.game.disconnect();
         if (this.gameThread != null) {
@@ -175,6 +174,7 @@ public class GUIPlayer extends HumanPlayer
                 System.out.println(ex.getMessage());
             }
         }
+        gui.leaveGame();
         playing = true;
     }
 }

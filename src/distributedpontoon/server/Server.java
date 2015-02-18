@@ -1,5 +1,6 @@
 package distributedpontoon.server;
 
+import distributedpontoon.directoryservice.DirectoryService;
 import distributedpontoon.shared.IServerGame;
 import distributedpontoon.shared.NetMessage;
 import distributedpontoon.shared.NetMessage.MessageType;
@@ -22,8 +23,8 @@ import java.util.Set;
  * to play a game against.
  * 
  * @author 6266215
- * @version 1.0
- * @since 2015-02-04
+ * @version 1.1
+ * @since 2015-02-18
  */
 public class Server implements Runnable
 {
@@ -40,7 +41,7 @@ public class Server implements Runnable
     private ServerSocket server;
     /** A thread to allow this {@link Server} to run in the background. */
     private Thread serverThread;
-    /** The hostname of the directory server. */
+    /** The host name of the directory server. */
     private String dirServer;
     /** The port of the directory server. */
     private int dirPort;
@@ -58,6 +59,8 @@ public class Server implements Runnable
         this.hostName = "UNKNOWN";
         this.server = null;
         this.serverThread = null;
+        this.dirServer = "localhost";
+        this.dirPort = 55552;
         this.games = new HashMap<>();
     }
     
@@ -82,6 +85,8 @@ public class Server implements Runnable
         this.hostName = "UNKNOWN";
         this.server = null;
         this.serverThread = null;
+        this.dirServer = "localhost";
+        this.dirPort = 55552;
         this.games = new HashMap<>();
     }
     
@@ -123,6 +128,17 @@ public class Server implements Runnable
         return Server.INSTANCE;
     }
     
+    /**
+     * Sets the details of the {@link DirectoryService} to connect to. The 
+     * host name and port should both be specified when calling this to ensure 
+     * that they are both correct.
+     * 
+     * @param dirName The host name/ IP address of the {@link DirectoryService} 
+     * as a String.
+     * @param dirPortNum The port number the {@link DirectoryService} listens on
+     *  as an int.
+     * @since 1.1
+     */
     public void setDirectoryServer(String dirName, int dirPortNum)
     {
         this.dirServer = dirName;
@@ -227,6 +243,51 @@ public class Server implements Runnable
         System.err.printf("SERVER (%s): %s\n", formattedDate, msg);
     }
     
+    private void registerServer()
+    {
+        Socket directorySocket;
+        try {
+            InetAddress address = InetAddress.getByName(dirServer);
+            directorySocket = new Socket(address, dirPort);
+            ObjectOutputStream output = 
+                    new ObjectOutputStream(directorySocket.getOutputStream());
+            
+            serverMessage("Registering with directory server...");
+            output.writeObject(MessageType.REGISTER_SERVER);
+            output.writeUTF(hostName);
+            output.writeInt(port);
+            output.flush();
+        } catch (UnknownHostException hostEx) {
+            serverError("Directory server host '%s' may not exist.", 
+                    dirServer);
+        } catch (IOException ioEx) {
+            serverError("Could not register with directory server.");
+        }
+    }
+    
+    private void registerGame(int id)
+    {
+        Socket directorySocket;
+        try {
+            InetAddress address = InetAddress.getByName(dirServer);
+            directorySocket = new Socket(address, dirPort);
+            ObjectOutputStream output = 
+                    new ObjectOutputStream(directorySocket.getOutputStream());
+            
+            serverMessage("Registering game %d with directory server...", id);
+            output.writeObject(MessageType.REGISTER_GAME);
+            output.writeUTF(hostName);
+            output.writeInt(port);
+            output.writeInt(id);
+            output.flush();
+        } catch (UnknownHostException hostEx) {
+            serverError("Directory server host '%s' may not exist.", 
+                    dirServer);
+        } catch (IOException ioEx) {
+            serverError("Could not register game with directory server.");
+        }
+    }
+    
     /**
      * Listens for connections in the background and launches new games when 
      * a connection is attempted.
@@ -236,25 +297,7 @@ public class Server implements Runnable
     @Override
     public void run()
     {
-        String serverName = dirServer;
-        int directoryPort = 55552;
-        Socket directorySocket;
-        try {
-            InetAddress address = InetAddress.getByName(serverName);
-            directorySocket = new Socket(address, directoryPort);
-            ObjectOutputStream output = new ObjectOutputStream(directorySocket.getOutputStream());
-            
-            serverMessage("Registering with directory server...");
-            output.writeObject(MessageType.REGISTER_SERVER);
-            output.writeUTF(hostName);
-            output.writeInt(port);
-            output.flush();
-        } catch (UnknownHostException hostEx) {
-            serverError("Directory server host '%s' may not exist.", 
-                    serverName);
-        } catch (IOException ioEx) {
-            serverError("Could not register with directory server.");
-        }
+        registerServer();
         serverMessage("Server listening (%s:%d).", hostName, 
                 server.getLocalPort());
         while (!server.isClosed())
@@ -269,27 +312,66 @@ public class Server implements Runnable
             }
             
             try {
-                ObjectInputStream input = new ObjectInputStream(socket.getInputStream());
+                ObjectInputStream input = 
+                        new ObjectInputStream(socket.getInputStream());
                 MessageType query = (MessageType)input.readObject();
+                IServerGame game = null;
+                Thread t;
                 switch (query) {
                     case POLL_SERVER:
+                        int[] gameIDs = new int[games.size()];
+                        int i = 0;
+                        for (IServerGame g : games.keySet()) {
+                            gameIDs[i++] = g.getGameID();
+                        }
                         ObjectOutputStream reply = 
-                                new ObjectOutputStream(socket.getOutputStream());
+                            new ObjectOutputStream(socket.getOutputStream());
                         reply.writeBoolean(true);
+                        reply.writeObject(gameIDs);
                         reply.flush();
                         break;
-                    case CLIENT_JOIN:
+                    case CLIENT_JOIN_SP:
                         serverMessage("Client %s connecting...", 
                                 socket.getInetAddress().getHostName());
-                        IServerGame game = new SinglePlayerGame();
+                        game = new SinglePlayerGame();
                         serverMessage("Client %s registered to game %d.", 
                                 socket.getInetAddress().getHostName(), 
                                 game.getGameID());
                         game.registerPlayer(socket);
 
-                        Thread t = new Thread(game);
+                        t = new Thread(game);
                         t.start();
                         games.put(game, t);
+                        break;
+                    case CLIENT_JOIN_MP:
+                        serverMessage("Client %s connecting...", 
+                                socket.getInetAddress().getHostName());
+                        int gameID = input.readInt();
+                        if (gameID <= 0) {
+                            serverMessage("Starting new MP game...");
+                            game = new MultiPlayerGame();
+                            t = new Thread(game);
+                            t.start();
+                            games.put(game, t);
+                            registerGame(game.getGameID());
+                        } else {
+                            for (IServerGame g : games.keySet()) {
+                                if (g.getGameID() == gameID) {
+                                    serverMessage("Joining MP game %d...", 
+                                            gameID);
+                                    game = g;
+                                    break;
+                                }
+                                serverError("No MP game with the ID %d found.", 
+                                        gameID);
+                            }
+                        }
+                        if (game != null) {
+                            serverMessage("Client %s registered to game %d.", 
+                                socket.getInetAddress().getHostName(), 
+                                game.getGameID());
+                            game.registerPlayer(socket);
+                        }
                         break;
                     default:
                         serverError("Unknown message %s received.", query);
@@ -349,7 +431,7 @@ public class Server implements Runnable
             }
         }
         
-        Server server = null;
+        Server server;
         /* If a port has been specified, attempt to start a server on it. */
         if (port != null) {
             try {
@@ -395,6 +477,8 @@ public class Server implements Runnable
         sb.append("Distributed Pontoon Server Help:\n");
         sb.append("\tCommand [options] (Short) - Action\n");
         sb.append("\t--port [port] (-p) - Specifies the port to listen on.\n");
+        sb.append("\t--dir-server [hostname:port] - Sets the directory server "
+                + "to connect to. If no port is specific, port 55552 is used.");
         sb.append("\t--help (-h) - Displays this help message.\n");
         
         return sb.toString();

@@ -4,6 +4,7 @@ import distributedpontoon.shared.Card;
 import distributedpontoon.shared.Hand;
 import distributedpontoon.shared.IClientGame;
 import distributedpontoon.shared.Pair;
+import distributedpontoon.shared.Triple;
 import java.util.HashMap;
 import java.util.Random;
 import java.util.Set;
@@ -42,11 +43,11 @@ public class RoboPlayer extends IPlayer
     @Override
     public void init()
     {
-        Set<Pair<String, Integer>> servers = findServers();
+        Set<Triple<String, Integer, Integer>> servers = findServers();
         if (servers == null || servers.isEmpty()) return;
-        for (Pair server : servers) {
-            String address = (String)server.Left;
-            int tmpPort = (int)server.Right;
+        for (Triple server : servers) {
+            String address = (String)server.One;
+            int tmpPort = (int)server.Two;
             IClientGame game = new ClientGame(this, 50, address, tmpPort);
             Thread t = new Thread(game);
             games.put(game, t);

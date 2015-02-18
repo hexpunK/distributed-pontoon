@@ -2,6 +2,7 @@ package distributedpontoon.directoryservice;
 
 import distributedpontoon.shared.NetMessage.MessageType;
 import distributedpontoon.shared.Pair;
+import distributedpontoon.shared.Triple;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
@@ -42,12 +43,13 @@ public class ServerPoller implements Runnable
                 System.err.printf("ServerPoller failed to sleep:\n%s\n",
                         ex.getMessage());
             }
-            Set<Pair<String, Integer>> hosts = directory.getKnownHosts();
-            ArrayList<Pair<String, Integer>> toRemove = new ArrayList<>();
+            Set<Triple<String, Integer, Integer>> hosts = 
+                    directory.getKnownHosts();
+            ArrayList<Triple> toRemove = new ArrayList<>();
             /* Check each server that we are already aware of. */
-            for (final Pair host : hosts) {
-                String name = (String)host.Left;
-                int port = (int)host.Right;
+            for (final Triple host : hosts) {
+                String name = (String)host.One;
+                int port = (int)host.Two;
                 Socket tmpSocket = null;
                 ObjectOutputStream out = null;
                 ObjectInputStream input = null;
@@ -58,15 +60,26 @@ public class ServerPoller implements Runnable
                     out = new ObjectOutputStream(tmpSocket.getOutputStream());
                     out.writeObject(MessageType.POLL_SERVER);
                     
-                    input = new ObjectInputStream(tmpSocket.getInputStream());
                     out.flush();
-                    input.readBoolean();
+                    input = new ObjectInputStream(tmpSocket.getInputStream());
+                    if (input.readBoolean() && (int)host.Three > 0) {
+                        int[] gameIDs = (int[])input.readObject();
+                        boolean gameFound = false;
+                        for (int id : gameIDs) {
+                            gameFound = id == (int)host.Three;
+                        }
+                        if (!gameFound) {
+                            System.out.printf("Game %s:%d - %d seems to be done"
+                                    + ".\n", name, port, host.Three);
+                            toRemove.add(host);
+                        }
+                    }
                     // If any exceptions are thrown, remove the server.
                 } catch (UnknownHostException hostEx) {
                     toRemove.add(host);
                     System.out.printf("Host %s does not seem to exist, "
                             + "removing.\n%s\n", name, hostEx.getMessage());
-                } catch (IOException ioEx) {
+                } catch (IOException | ClassNotFoundException ioEx) {
                     toRemove.add(host);
                     System.out.printf("Could not communicate with "
                             + "server %s, removing.\n%s\n", 
@@ -86,8 +99,8 @@ public class ServerPoller implements Runnable
                 }
             }
             /* Remove any servers that were lost whilst polling. */
-            for (Pair host : toRemove) {
-                directory.removeServer((String)host.Left, (int)host.Right);
+            for (Triple host : toRemove) {
+                directory.removeServer((String)host.One, (int)host.Two);
             }
         }
     }

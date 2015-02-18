@@ -1,22 +1,28 @@
 package distributedpontoon.directoryservice;
 
+import distributedpontoon.client.IPlayer;
 import distributedpontoon.server.Server;
 import distributedpontoon.shared.NetMessage.MessageType;
 import distributedpontoon.shared.Pair;
+import distributedpontoon.shared.Triple;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.net.InetAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Scanner;
 import java.util.Set;
 
 /**
- *
+ * Launches and manages a new {@link DirectoryService} to be used by 
+ * {@link Server}s and {@link IPlayer}s when looking for games of Pontoon to 
+ * play.
+ * 
  * @author 6266215
- * @version 1.0
+ * @version 1.1
  */
 public class DirectoryService implements Runnable
 {
@@ -36,7 +42,7 @@ public class DirectoryService implements Runnable
     /** A thread to run {@link DirectoryService} in the background. */
     private Thread serverThread;
     /** A mapping of known host names to their ports. */
-    private Set<Pair<String, Integer>> knownHosts;
+    private Set<Triple<String, Integer, Integer>> knownHosts;
     
     private DirectoryService()
     {
@@ -104,20 +110,23 @@ public class DirectoryService implements Runnable
         }
     }
     
-    public void addServer(String hostName, int port)
+    public void addServer(String hostName, int port, int gameID)
     {
-        knownHosts.add(new Pair<>(hostName, port));
+        knownHosts.add(new Triple<>(hostName, port, gameID));
     }
     
-    public Set<Pair<String, Integer>> getKnownHosts() { return knownHosts; }
+    public Set<Triple<String, Integer, Integer>> getKnownHosts() 
+    { 
+        return knownHosts; 
+    }
     
     public void removeServer(String hostName, int port)
     {
-        Pair toRemove = null;
-        for (Pair pair : knownHosts) {
-            if (pair.Left.equals(hostName) && pair.Right.equals(port))
+        Triple toRemove = null;
+        for (Triple host : knownHosts) {
+            if (host.One.equals(hostName) && host.Two.equals(port))
             {
-                toRemove = pair;
+                toRemove = host;
                 break;
             }
         }
@@ -165,10 +174,14 @@ public class DirectoryService implements Runnable
             System.out.printf("Client %s connecting...\n", 
                     socket.getInetAddress().getHostName());
             try {
-                ObjectOutputStream output = new ObjectOutputStream(socket.getOutputStream());
-                ObjectInputStream input = new ObjectInputStream(socket.getInputStream());
+                ObjectOutputStream output = 
+                        new ObjectOutputStream(socket.getOutputStream());
+                ObjectInputStream input = 
+                        new ObjectInputStream(socket.getInputStream());
                 
                 MessageType request = (MessageType)input.readObject();
+                String remoteName;
+                int remotePort;
                 switch (request) {
                     case QUERY_SERVERS:
                         System.out.println("Sending list of known hosts...");
@@ -178,11 +191,21 @@ public class DirectoryService implements Runnable
                         break;
                     case REGISTER_SERVER:
                         System.out.println("Registering server...");
-                        String remoteName = input.readUTF();
-                        int remotePort = input.readInt();
-                        addServer(remoteName, remotePort);
-                        System.out.printf("Registerd server %s:%d\n", 
+                        remoteName = input.readUTF();
+                        remotePort = input.readInt();
+                        addServer(remoteName, remotePort, -1);
+                        addServer(remoteName, remotePort, 0);
+                        System.out.printf("Registered server %s:%d\n", 
                                 remoteName, remotePort);
+                        break;
+                    case REGISTER_GAME:
+                        System.out.println("Registering game...");
+                        remoteName = input.readUTF();
+                        remotePort = input.readInt();
+                        int gameID = input.readInt();
+                        addServer(remoteName, remotePort, gameID);
+                        System.out.printf("Registered game %s:%d - %d\n", 
+                                remoteName, remotePort, gameID);
                         break;
                     default:
                         System.err.printf("Directory server does not support "
@@ -199,9 +222,31 @@ public class DirectoryService implements Runnable
     
     public static void main(String[] args)
     {
-        DirectoryService server;
         Integer port = null;
-        /* If a port has been specified, attempt to start a server on it. */
+        DirectoryService server;
+        /* handle the command line parameters if any were passed. */
+        for (int i = 0; i < args.length; i++) {
+            switch(args[i]) {
+                case "-p":
+                case "--port":
+                    // Allow the port to be specified.
+                    try {
+                        port = Integer.parseInt(args[i+1]);
+                        i++;
+                    } catch (NumberFormatException nEx) {
+                        System.err.println("Port value must be a number.");
+                    }
+                    break;
+                case "-h":
+                case "--help":
+                    // Show a help message.
+                    System.out.println(helpMessage());
+                    break;
+                default:
+                    System.err.printf("Unknown argument '%s'\n", args[i]);
+            }
+        }
+        
         if (port != null) {
             try {
                 server = DirectoryService.getInstance(port);
@@ -231,5 +276,23 @@ public class DirectoryService implements Runnable
             }
         }
         server.kill();
+    }
+    
+    /**
+     * Creates a help message for the {@link DirectoryService} command line 
+     * arguments.
+     * 
+     * @return A String containing the help message.
+     * @since 1.1
+     */
+    private static String helpMessage()
+    {
+        StringBuilder sb = new StringBuilder();
+        sb.append("Pontoon Directory Server Help:\n");
+        sb.append("\tCommand [options] (Short) - Action\n");
+        sb.append("\t--port [port] (-p) - Specifies the port to listen on.\n");
+        sb.append("\t--help (-h) - Displays this help message.\n");
+        
+        return sb.toString();
     }
 }

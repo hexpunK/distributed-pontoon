@@ -6,6 +6,7 @@ import distributedpontoon.shared.IClientGame;
 import distributedpontoon.shared.Hand;
 import distributedpontoon.shared.NetMessage.MessageType;
 import distributedpontoon.shared.Pair;
+import distributedpontoon.shared.Triple;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.InputMismatchException;
@@ -49,9 +50,8 @@ public class CLIPlayer extends HumanPlayer
     public void init()
     {
         playing = true;
-        String line = "";
-        String svr = "";
-        int port = -1;
+        Triple<String, Integer, Integer> server = new Triple<>("", -1, -1);
+        String line;
         
         while (playing) {
             System.out.println("What would you like to do?");
@@ -59,8 +59,9 @@ public class CLIPlayer extends HumanPlayer
             switch(line) {
                 case "servers":
                     // Let the user pick from a list of known servers.
-                    Set<Pair<String, Integer>> svrSet = findServers();
-                    Pair<String, Integer>[] servers = svrSet.toArray(new Pair[svrSet.size()]);
+                    Set<Triple<String, Integer, Integer>> svrs = findServers();
+                    Triple<String, Integer, Integer>[] servers 
+                            = svrs.toArray(new Triple[svrs.size()]);
                     if (servers.length == 0) {
                         System.out.println("No servers found.");
                         return;
@@ -68,9 +69,15 @@ public class CLIPlayer extends HumanPlayer
                     System.out.println("Servers available:");
                     int i;
                     for (i = 0; i < servers.length; i++) {
+                        String gameType = String.format("Game %d", 
+                                servers[i].Three);
+                        if (servers[i].Three == -1)
+                            gameType = "New Single Game";
+                        else if (servers[i].Three == 0)
+                            gameType = "New Multi-player Game";
                         System.out.printf(
-                                "\t%d - %s:%d\n", 
-                                i+1, servers[i].Left, servers[i].Right
+                                "\t%d - %s:%d (%s)\n", 
+                                i+1, servers[i].One, servers[i].Two, gameType
                         );
                     }
                     System.out.println("Enter server number: ");
@@ -87,28 +94,29 @@ public class CLIPlayer extends HumanPlayer
                         System.out.printf("You can only enter 1-%d.\n", i);
                         continue;
                     }
-                    serverNum--; // Change the number to an index.
                     // Select the server at the specified index.
-                    svr = servers[serverNum].Left;
-                    port = servers[serverNum].Right;
+                    server = servers[serverNum-1];
                     break;
                 case "s":
                 case "server":
                     System.out.println("Enter new server address/name:");
-                    svr = input.nextLine().trim();
+                    String svr = input.nextLine().trim();
+                    server = new Triple<>(svr, server.Two, server.Three);
                     break;
                 case "port":
                     System.out.println("Enter new server port:");
-                    port = input.nextInt();
+                    int port = input.nextInt();
+                    server = new Triple<>(server.One, port, server.Three);
                     input.nextLine();
                     break;
                 case "p":
                 case "play":
-                    if (svr.isEmpty() || port == -1) {
+                    if (server.One.isEmpty() || server.Two == -1) {
                         System.out.println("Please select a server!");
                         continue;
                     }
-                    game = new ClientGame(this, bet, svr, port);
+                    game = new ClientGame(this, bet, server.One, server.Two);
+                    game.setGameID(server.Three);
                     startGame();
                     try {
                         gameThread.join();
@@ -123,10 +131,11 @@ public class CLIPlayer extends HumanPlayer
                     try {
                         int newBet = input.nextInt();
                         input.nextLine();
-                        this.bet = newBet;
-                        System.out.println("Bet changed!");
+                        this.bet = Math.max(newBet, this.bet);
+                        System.out.printf("Bet changed!, New bet : %d\n",
+                                this.bet);
                     } catch (InputMismatchException inEx) {
-                        System.err.println("Can only be a number. Bet unchanged.");
+                        System.err.println("New bet can only be a number.");
                     }
                     break;
                 case "bal":

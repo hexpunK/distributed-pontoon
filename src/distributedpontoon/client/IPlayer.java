@@ -5,12 +5,14 @@ import distributedpontoon.server.Server;
 import distributedpontoon.shared.IClientGame;
 import distributedpontoon.shared.NetMessage.MessageType;
 import distributedpontoon.shared.Pair;
+import distributedpontoon.shared.Triple;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.net.InetAddress;
 import java.net.Socket;
 import java.net.UnknownHostException;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Set;
 
@@ -41,13 +43,13 @@ public abstract class IPlayer
      * Attempts to connect to the specified {@link DirectoryService} to let this
      *  {@link IPlayer} find any active {@link Server}s.
      * 
-     * @return A {@link Set} of unique hostname-port number {@link Pair}s. This 
-     * can be empty.
+     * @return A {@link Set} of unique host name-port number {@link Triple}s. 
+     * This can be empty.
      * @since 1.3
      */
-    public Set<Pair<String, Integer>> findServers()
+    public Set<Triple<String, Integer, Integer>> findServers()
     {
-        Set<Pair<String, Integer>> servers = new HashSet<>();
+        Set<Triple<String, Integer, Integer>> servers = new HashSet<>();
         String serverName = "localhost";
         int directoryPort = 55552;
         Socket directorySocket;
@@ -56,11 +58,11 @@ public abstract class IPlayer
             directorySocket = new Socket(address, directoryPort);
             ObjectOutputStream output = 
                     new ObjectOutputStream(directorySocket.getOutputStream());
-            ObjectInputStream input = 
-                    new ObjectInputStream(directorySocket.getInputStream());
             
             output.writeObject(MessageType.QUERY_SERVERS);
             output.flush();
+            ObjectInputStream input = 
+                    new ObjectInputStream(directorySocket.getInputStream());
             MessageType reply = (MessageType)input.readObject();
             if (reply == MessageType.QUERY_SERVERS) {
                 servers = (HashSet)input.readObject();

@@ -7,6 +7,8 @@ import java.io.Serializable;
  *  class, with both the left and right components capable of holding different 
  * types. A {@link Pair} is immutable once constructed.
  * 
+ * Why isn't something this simple in the Java Standard Library...
+ * 
  * @param <L> The type for the left component in this {@link Pair}.
  * @param <R> The type for the right component in this {@link Pair}.
  * @author 6266215

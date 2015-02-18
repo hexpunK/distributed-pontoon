@@ -3,6 +3,7 @@ package distributedpontoon.client.gui;
 import distributedpontoon.client.IPlayer;
 import distributedpontoon.shared.IClientGame;
 import distributedpontoon.shared.Pair;
+import distributedpontoon.shared.Triple;
 import java.awt.BorderLayout;
 import java.awt.Dimension;
 import java.awt.Font;
@@ -57,15 +58,21 @@ public class ServerPicker extends JDialog
     
     public final void updateServers()
     {
-        Set<Pair<String, Integer>> servers = player.findServers();
+        Set<Triple<String, Integer, Integer>> servers = player.findServers();
         JScrollPane scroller;
         scrollList = new JPanel(new GridLayout(0, 1));
         if (servers == null || servers.isEmpty()) {
             JLabel label = new JLabel("No servers found.");
             scrollList.add(label, BorderLayout.CENTER);
         } else {
-            for (Pair<String, Integer> server : servers) {
-                String text = String.format("%s:%d", server.Left, server.Right);
+            for (Triple<String, Integer, Integer> server : servers) {
+                String gameType = String.format("Game %d", server.Three);
+                if (server.Three == -1)
+                    gameType = "New Single Game";
+                else if (server.Three == 0)
+                    gameType = "New Multi-player Game";
+                String text = String.format("%s:%d - %s", 
+                        server.One, server.Two, gameType);
                 ObjectButton<?> button = new ObjectButton<>(server, text);
                 button.addActionListener(new ButtonHandler());
                 button.setSize(scrollList.getWidth(), 50);
@@ -155,11 +162,13 @@ public class ServerPicker extends JDialog
         @Override
         public void actionPerformed(ActionEvent e) 
         {
-            ObjectButton<Pair<String, Integer>> source;
+            ObjectButton<Triple<String, Integer, Integer>> source;
             source = ((ObjectButton)e.getSource());
-            String server = source.getItem().Left;
-            int port = source.getItem().Right;
-            owner.setServer(server, port);
+            String server = source.getItem().One;
+            int port = source.getItem().Two;
+            int gameID = source.getItem().Three;
+            owner.setGame(server, port, gameID);
+            
             ServerPicker.this.dispose();
         }   
     }

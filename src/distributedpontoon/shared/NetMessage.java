@@ -1,6 +1,8 @@
 package distributedpontoon.shared;
 
 import distributedpontoon.directoryservice.DirectoryService;
+import distributedpontoon.server.MultiPlayerGame;
+import distributedpontoon.server.SinglePlayerGame;
 import distributedpontoon.shared.IServerGame;
 import java.io.Serializable;
 
@@ -19,19 +21,27 @@ public class NetMessage<T> implements Serializable {
     /**
      * Various types of {@link NetMessage}.
      * 
-     * @version 1.1
+     * @version 1.2
      * @since 2015-02-06
      */
     public static enum MessageType implements Serializable
     {
         /** Sent to a {@link DirectoryService} to store this server on it. */
         REGISTER_SERVER,
+        /** Sent by a {@link MultiPlayerGame} to register it as running. */
+        REGISTER_GAME,
         /** Sent to a {@link DirectoryService} to request a list of servers. */
         QUERY_SERVERS,
         /** Sent from a {@link DirectoryService} to see if servers are up. */
         POLL_SERVER,
-        /** Sent by a client when it requests to play an {@link IServerGame} */
-        CLIENT_JOIN,
+        /** Sent by a client when it requests to play a new
+         * {@link SinglePlayerGame} */
+        CLIENT_JOIN_SP,
+        /** Sent by a client when it requests to play a existing or new 
+         * {@link MultiPlayerGame} */
+        CLIENT_JOIN_MP,
+        /** Sent to {@link IServerGame}s by a client when they can play. */
+        CLIENT_READY,
         /** Sent to clients to let them know the server knows them. */
         JOIN_ACKNOWLEDGE,
         /** Sent when a game initialises. */
