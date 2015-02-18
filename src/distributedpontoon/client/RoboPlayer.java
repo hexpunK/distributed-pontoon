@@ -48,6 +48,7 @@ public class RoboPlayer extends IPlayer
         for (Triple server : servers) {
             String address = (String)server.One;
             int tmpPort = (int)server.Two;
+            if ((int)server.Three >= 0) continue;
             IClientGame game = new ClientGame(this, 50, address, tmpPort);
             Thread t = new Thread(game);
             games.put(game, t);

@@ -59,9 +59,7 @@ public class ClientGame extends IClientGame
             );
         }
         
-        synchronized(this) { 
-            this.gameID = ++IGame.GameCount;
-        }
+        this.gameID = -1;
         this.port = port;
         this.serverName = hostName;
         this.connection = null;
