@@ -16,6 +16,7 @@ import java.util.Calendar;
 import java.util.HashMap;
 import java.util.Scanner;
 import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -48,7 +49,7 @@ public class Server implements Runnable
     /** The port of the directory server. */
     private int dirPort;
     /** A mapping of {@link IServerGame} instances to their executing thread. */
-    private final HashMap<IServerGame, Thread> games;
+    private final ConcurrentHashMap<IServerGame, Thread> games;
     
     static final Logger logger = Logger.getLogger(Logger.GLOBAL_LOGGER_NAME);
     
@@ -65,7 +66,7 @@ public class Server implements Runnable
         this.serverThread = null;
         this.dirServer = "localhost";
         this.dirPort = 55552;
-        this.games = new HashMap<>();
+        this.games = new ConcurrentHashMap<>();
         
         try {
             PontoonLogger.setup("server");
@@ -98,7 +99,7 @@ public class Server implements Runnable
         this.serverThread = null;
         this.dirServer = "localhost";
         this.dirPort = 55552;
-        this.games = new HashMap<>();
+        this.games = new ConcurrentHashMap<>();
     }
     
     /**
@@ -192,10 +193,12 @@ public class Server implements Runnable
         for (IServerGame game : gameSet) {
             game.stop();
             Thread t = games.get(game);
-            try {
-                t.join();
-            } catch (InterruptedException intEx) {
-                serverError("Game interrupted unexpectedly.");
+            if (t != null) {
+                try {
+                    t.join();
+                } catch (InterruptedException intEx) {
+                    serverError("Game interrupted unexpectedly.");
+                }
             }
         }
         

@@ -299,6 +299,7 @@ public class SinglePlayerGame extends IServerGame
                 try {
                     reply = (MessageType)input.readObject();
                 } catch (IOException noMsg) {
+                    if (noMsg == null || noMsg.getMessage() == null) continue;
                     gameError("Error retrieving message. Reason:\n%s", 
                             noMsg.getMessage());
                     stop();

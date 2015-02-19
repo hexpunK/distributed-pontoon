@@ -448,6 +448,8 @@ public class MultiPlayerGame extends IServerGame
                         in = inputs.get(plyID);
                         reply = (MessageType)in.readObject();
                     } catch (IOException noMsg) {
+                        if (noMsg == null || noMsg.getMessage() == null) 
+                            continue;
                         gameError("Error retrieving message. Reason:\n%s", 
                             noMsg.getMessage());
                         stop();
