@@ -1,6 +1,5 @@
 package distributedpontoon.shared;
 
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.EmptyStackException;
 import java.util.Stack;
@@ -106,6 +105,7 @@ public class Deck
      * @return Returns a String containing the details of the contents for this
      * {@link Deck}.
      * @since 1.0
+     * @see Object#toString() 
      */
     @Override
     public String toString()

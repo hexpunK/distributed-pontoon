@@ -22,7 +22,7 @@ import java.util.Set;
  * to play a game against.
  * 
  * @author 6266215
- * @version 1.1
+ * @version 1.2
  * @since 2015-02-18
  */
 public class Server implements Runnable
@@ -302,6 +302,13 @@ public class Server implements Runnable
         }
     }
     
+    /**
+     * Removes a game from the {@link DirectoryService} this {@link Server} is 
+     * connected to.
+     * 
+     * @param id The game ID of the {@link IServerGame} to remove.
+     * @since 1.2
+     */
     public void unregisterGame(int id)
     {
         Socket directorySocket;

@@ -83,6 +83,7 @@ public class Triple<L, M, R> implements Serializable
      * 
      * @return A {@link String} containing the details of this {@link Triple}.
      * @since 1.0
+     * @see Object#toString() 
      */
     @Override
     public String toString()

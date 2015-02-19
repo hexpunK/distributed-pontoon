@@ -76,6 +76,7 @@ public class Pair<L, R> implements Serializable
      * 
      * @return A {@link String} containing the details of this {@link Pair}.
      * @since 1.0
+     * @see Object#toString() 
      */
     @Override
     public String toString()

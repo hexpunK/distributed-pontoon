@@ -97,7 +97,7 @@ public abstract class IPlayer
     public abstract void reigsterGame(IClientGame game);
     
     /**
-     * 
+     * Checks to see if this {@link IPlayer} is in a game or not.
      * 
      * @return Returns true if this {@link IPlayer} is currently playing. False 
      * otherwise.

@@ -98,7 +98,7 @@ public class GUIPlayer extends HumanPlayer
      * the {@link ClientGUI} tells the server what move to make.
      * 
      * @param caller The {@link IClientGame} that requested the move.
-     * @Since 1.0
+     * @since 1.0
      */
     @Override
     public void play(IClientGame caller)

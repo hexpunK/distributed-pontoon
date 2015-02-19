@@ -212,6 +212,15 @@ public class CLIPlayer extends HumanPlayer
         }
     }
 
+    /**
+     * Displays a message telling the player that they won the hand and how 
+     * their balance has been adjusted.
+     * 
+     * @param game The {@link IClientGame} this {@link CLIPlayer} has won.
+     * @param pontoon Set to true if the player won with a Pontoon (2 cards with
+     *  a score of 21 points). False otherwise.
+     * @since 1.2
+     */
     @Override
     public void playerWin(IClientGame game, boolean pontoon) 
     {
@@ -224,6 +233,13 @@ public class CLIPlayer extends HumanPlayer
         System.out.printf("Current balance: %d\n", balance);
     }
 
+    /**
+     * Displays a message telling the player that they lost the hand and how 
+     * their balance has been adjusted.
+     * 
+     * @param game The {@link IClientGame} this {@link CLIPlayer} has lost.
+     * @since 1.2
+     */
     @Override
     public void dealerWin(IClientGame game)
     { 

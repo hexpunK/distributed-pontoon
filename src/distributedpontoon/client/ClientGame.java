@@ -34,6 +34,7 @@ public class ClientGame extends IClientGame
     private Socket connection;
     /** The output stream to write to the server with. */
     private ObjectOutputStream output;
+    /** The input stream to read messages from the server with. */
     private ObjectInputStream input;
     /** An {@link IPlayer} to request moves from for this {@link ClientGame}. */
     private final IPlayer player;
@@ -462,5 +463,20 @@ public class ClientGame extends IClientGame
                         ioEx.getMessage());
             }
         }
+    }
+
+    /**
+     * Gets some details about this {@link ClientGame} and returns them in a 
+     * {@link String}.
+     * 
+     * @return A String containing details about this {@link ClientGame}.
+     * @since 1.2
+     * @see Object#toString() 
+     */
+    @Override
+    public String toString()
+    {
+        return String.format("Client-side game - %d (Connected: %s)", 
+            gameID, (isConnected() ? "YES" : "NO"));
     }
 }

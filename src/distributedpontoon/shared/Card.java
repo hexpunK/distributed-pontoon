@@ -169,6 +169,7 @@ public class Card implements Serializable
      * 
      * @return The name of this card as a {@link String}.
      * @since 1.0
+     * @see Object#toString() 
      */
     @Override
     public String toString()
@@ -176,12 +177,31 @@ public class Card implements Serializable
         return String.format("%s (%d)", getName(), getValue());
     }
 
+    /**
+     * Gets the unique identifier for this {@link Card} object. This is based on
+     *  the current {@link CardRank} and {@link CardSuit}.
+     * 
+     * @return The unique identifier as an int.
+     * @since 1.1
+     * @see Object#hashCode() 
+     */
     @Override
     public int hashCode()
     {
         return (Rank.hashCode() ^ Suit.hashCode());
     }
 
+    /**
+     * Compares this {@link Card} against another {@link Object}. If the other 
+     * {@link Object} is not a {@link Card} or the {@link CardRank} and {@link 
+     * CardSuit} differ between the two, they are unequal.
+     * 
+     * @param obj The other {@link Object} to compare against.
+     * @return Returns true if this {@link Card} and the other {@link Object} 
+     * are the same type and have the same {@link CardRank} and {@link CardSuit}
+     * @since 1.1
+     * @see Object#equals(java.lang.Object) 
+     */
     @Override
     public boolean equals(Object obj) 
     {

@@ -45,6 +45,14 @@ public class SinglePlayerGame extends IServerGame
         this.output = null;
     }
     
+    /**
+     * Registers a {@link IPlayer} with this {@link SinglePlayerGame}. The 
+     * provided {@link Socket} is used to identify the new player.
+     * 
+     * @param socket The {@link Socket} used by the player to connect to this 
+     * {@link SinglePlayerGame}.
+     * @since 1.0
+     */
     @Override
     public void registerPlayer(Socket socket)
     {        
@@ -70,6 +78,15 @@ public class SinglePlayerGame extends IServerGame
         }
     }
     
+    /**
+     * Transfers a card from the {@link Deck}, if available, to the current 
+     * {@link IPlayer}.
+     * 
+     * @param playerID The ID of the player to send the loss message to.
+     * @throws IOException Thrown if the {@link Card} cannot be sent to the 
+     * {@link IPlayer}.
+     * @since 1.0
+     */
     @Override
     public void dealCard(int playerID) throws IOException
     {
@@ -83,6 +100,17 @@ public class SinglePlayerGame extends IServerGame
         }
     }
 
+    /**
+     * Checks the {@link Hand} of the playing {@link IPlayer}. Based on the 
+     * outcome of comparing this hand against the dealers, this may send a win 
+     * or a loss message to the client.
+     * 
+     * @param playerID The ID of the player to send the loss message to.
+     * @param h The {@link Hand} to compare against the dealer.
+     * @throws IOException Thrown if there are any issues sending the win or 
+     * loss message to the client.
+     * @since 1.0
+     */
     @Override
     public void checkHand(int playerID, Hand h) 
             throws IOException
@@ -142,6 +170,18 @@ public class SinglePlayerGame extends IServerGame
         }
     }
     
+    /**
+     * Lets the dealer take their turn. The basic algorithm will play until the 
+     * dealer has a score of up to 21, or until the dealer goes bust. An 
+     * alternative algorithm has the dealer comparing against the players score.
+     * 
+     * @param plyScore The score of the current {@link IPlayer} to compare 
+     * against.
+     * @return Returns true if the dealer has a score lower than 21, false 
+     * otherwise.
+     * @since 1.0
+     */
+    @Override
     public boolean dealerPlay(int plyScore)
     {
         while (dealer.total() <= 21) {
@@ -166,6 +206,17 @@ public class SinglePlayerGame extends IServerGame
         return (dealer.total() <= 21);
     }
     
+    /**
+     * Sends a message to the specified {@link IPlayer} telling them that they 
+     * won this hand. If the player won with a Pontoon (2 cards worth 21 points)
+     *  , the message can tell them about this.
+     * 
+     * @param playerID The ID of the player to send the loss message to.
+     * @param twentyOne Set to true if the player won with a Pontoon (2 cards 
+     * worth 21 points), false otherwise.
+     * @throws IOException Thrown if there are any issues sending the message.
+     * @since 1.1
+     */
     @Override
     public void playerWin(int playerID, boolean twentyOne) throws IOException
     {
@@ -176,6 +227,14 @@ public class SinglePlayerGame extends IServerGame
         output.flush();
     }
     
+    /**
+     * Sends a message to the specified {@link IPlayer} telling them that the 
+     * dealer has won this hand.
+     * 
+     * @param playerID The ID of the player to send the loss message to.
+     * @throws IOException Thrown if there are any issues sending the message.
+     * @since 1.1
+     */
     @Override
     public void dealerWin(int playerID) throws IOException
     {
@@ -185,6 +244,12 @@ public class SinglePlayerGame extends IServerGame
         output.flush();
     }
     
+    /**
+     * Shuts down this {@link SinglePlayerGame}, closing all the streams and 
+     * the socket.
+     * 
+     * @since 1.0
+     */
     @Override
     public void stop()
     {
@@ -201,6 +266,12 @@ public class SinglePlayerGame extends IServerGame
         }
     }
     
+    /**
+     * Listens for messages from the {@link IPlayer} taking part in this game in
+     *  the background and responds to them as needed.
+     * 
+     * @since 1.0
+     */
     @Override
     public void run()
     {
@@ -288,5 +359,20 @@ public class SinglePlayerGame extends IServerGame
         } finally {
             stop();
         }
+    }
+
+    /**
+     * Gets some details about this {@link SinglePlayerGame} and returns them in 
+     *  a {@link String}.
+     * 
+     * @return A String containing details about this {@link SinglePlayerGame}.
+     * @since 1.1
+     * @see Object#toString() 
+     */
+    @Override
+    public String toString()
+    {
+        return String.format("Single-player game - %d (Connected: %s)", 
+            gameID, (this.socket != null ? "YES" : "NO"));
     }
 }

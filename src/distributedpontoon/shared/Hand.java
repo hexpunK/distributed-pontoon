@@ -101,6 +101,7 @@ public class Hand implements Serializable
      * @return Returns a String containing the details of the contents for this
      * {@link Hand}.
      * @since 1.0
+     * @see Object#toString() 
      */
     @Override
     public String toString()

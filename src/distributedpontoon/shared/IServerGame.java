@@ -2,6 +2,7 @@ package distributedpontoon.shared;
 
 import distributedpontoon.client.IPlayer;
 import distributedpontoon.shared.Deck;
+import distributedpontoon.shared.Hand;
 import distributedpontoon.shared.Card;
 import java.io.IOException;
 import java.net.Socket;
@@ -13,8 +14,8 @@ import java.net.Socket;
  * single dealer, or a single player against a single dealer for example.
  * 
  * @author 6266215
- * @version 1.1
- * @since 2015-02-10
+ * @version 1.2
+ * @since 2015-02-18
  */
 public abstract class IServerGame extends IGame
 {
@@ -73,6 +74,17 @@ public abstract class IServerGame extends IGame
      */
     public abstract void checkHand(int playerID, Hand h) 
             throws IOException;
+    
+    /**
+     * Lets the dealer for this {@link IServerGame} take their turn. The 
+     * method used for the dealer to draw cards is implementation dependant.
+     * 
+     * @param plyScore The score of the player to compare against if needed.
+     * @return Returns true if the dealers {@link Hand} score is 21 or lower, 
+     * false otherwise.
+     * @since 1.2
+     */
+    public abstract boolean dealerPlay(int plyScore);
     
     /**
      * Sends a message to the {@link IPlayer} specified telling them that they 
