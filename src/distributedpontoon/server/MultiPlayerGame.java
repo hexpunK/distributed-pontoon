@@ -469,19 +469,19 @@ public class MultiPlayerGame extends IServerGame
                             switch (action) {
                                 case PLAYER_STICK:
                                     logger.log(Level.FINE, 
-                                            "Player %d has stuck.", plyID);
+                                            "Player {0} has stuck.", plyID);
                                     h = (Hand)in.readObject();
                                     hands.put(plyID, h);
                                     playerReady.put(plyID, true);
                                     break;
                                 case PLAYER_TWIST:
-                                    logger.log(Level.FINE, "Player %d twists.", 
+                                    logger.log(Level.FINE, "Player {0} twists.", 
                                             plyID);
                                     dealCard(plyID);
                                     break;
                                 case PLAYER_BUST:
                                     logger.log(Level.FINE, 
-                                            "Player %d has bust.", plyID);
+                                            "Player {0} has bust.", plyID);
                                     h = (Hand)in.readObject();
                                     hands.put(plyID, h);
                                     playerReady.put(plyID, true);

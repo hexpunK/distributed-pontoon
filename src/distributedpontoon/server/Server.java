@@ -67,13 +67,6 @@ public class Server implements Runnable
         this.dirServer = "localhost";
         this.dirPort = 55552;
         this.games = new ConcurrentHashMap<>();
-        
-        try {
-            PontoonLogger.setup("server");
-        } catch (IOException ex) {
-            serverError("Error setting up logging. Reason\n%s", 
-                    ex.getMessage());
-        }
     }
     
     /**
@@ -165,6 +158,12 @@ public class Server implements Runnable
      */
     public void init()
     {
+        try {
+            PontoonLogger.setup("server");
+        } catch (IOException ex) {
+            serverError("Error setting up logging. Reason\n%s", 
+                    ex.getMessage());
+        }
         serverMessage("Starting server...");
         try {
             server = new ServerSocket(port);
