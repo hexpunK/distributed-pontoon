@@ -12,6 +12,7 @@ import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.net.Socket;
+import java.util.logging.Level;
 
 /**
  * An {@link IServerGame} implementation to handle a single {@link IPlayer} 
@@ -96,7 +97,7 @@ public class SinglePlayerGame extends IServerGame
             output.writeObject(c);
             output.flush();
         } catch (DeckException deckEx) {
-            gameMessage("Deck emptied!");
+            logger.log(Level.FINE, "Deck emptied!");
         }
     }
 
@@ -199,7 +200,7 @@ public class SinglePlayerGame extends IServerGame
             try {
                 dealer.addCard(deck.pullCard());
             } catch (DeckException ex) {
-                gameMessage("Deck emptied.");
+                logger.log(Level.FINE, "Deck emptied.");
                 break;
             }
         }
@@ -329,16 +330,16 @@ public class SinglePlayerGame extends IServerGame
                         PlayerAction action = (PlayerAction)input.readObject();
                         switch (action) {
                             case PLAYER_STICK:
-                                gameMessage("Player has stuck.");
+                                logger.log(Level.FINE, "Player has stuck.");
                                 h = (Hand)input.readObject();
                                 checkHand(1, h);
                                 break;
                             case PLAYER_TWIST:
-                                gameMessage("Player has twisted.");
+                                logger.log(Level.FINE, "Player has twisted.");
                                 dealCard(1);
                                 break;
                             case PLAYER_BUST:
-                                gameMessage("Player has bust.");
+                                logger.log(Level.FINE, "Player has bust.");
                                 input.readObject();
                                 dealerWin(1);
                                 break;
@@ -360,6 +361,7 @@ public class SinglePlayerGame extends IServerGame
                     ioEx.getMessage());
         } finally {
             stop();
+            Server.getInstance().removeGame(gameID);
         }
     }
 

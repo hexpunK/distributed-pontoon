@@ -14,6 +14,7 @@ import java.net.SocketException;
 import java.net.SocketTimeoutException;
 import java.util.HashMap;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.logging.Level;
 
 /**
  * An implementation of {@link IServerGame} that can handle multiple players 
@@ -113,7 +114,7 @@ public class MultiPlayerGame extends IServerGame
             output.writeObject(c);
             output.flush();
         } catch (Deck.DeckException deckEx) {
-            gameMessage("Deck emptied!");
+            logger.log(Level.FINE, "Deck emptied!");
         }
     }
     
@@ -243,7 +244,7 @@ public class MultiPlayerGame extends IServerGame
             try {
                 dealer.addCard(deck.pullCard());
             } catch (Deck.DeckException ex) {
-                gameMessage("Deck emptied.");
+                logger.log(Level.FINE, "Deck emptied.");
                 break;
             }
         }
@@ -465,17 +466,20 @@ public class MultiPlayerGame extends IServerGame
                             PlayerAction action = (PlayerAction)in.readObject();
                             switch (action) {
                                 case PLAYER_STICK:
-                                    gameMessage("Player %d has stuck.", plyID);
+                                    logger.log(Level.FINE, 
+                                            "Player %d has stuck.", plyID);
                                     h = (Hand)in.readObject();
                                     hands.put(plyID, h);
                                     playerReady.put(plyID, true);
                                     break;
                                 case PLAYER_TWIST:
-                                    gameMessage("Player %d twists.", plyID);
+                                    logger.log(Level.FINE, "Player %d twists.", 
+                                            plyID);
                                     dealCard(plyID);
                                     break;
                                 case PLAYER_BUST:
-                                    gameMessage("Player %d has bust.", plyID);
+                                    logger.log(Level.FINE, 
+                                            "Player %d has bust.", plyID);
                                     h = (Hand)in.readObject();
                                     hands.put(plyID, h);
                                     playerReady.put(plyID, true);

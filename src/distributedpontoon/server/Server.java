@@ -3,6 +3,7 @@ package distributedpontoon.server;
 import distributedpontoon.directoryservice.DirectoryService;
 import distributedpontoon.shared.IServerGame;
 import distributedpontoon.shared.NetMessage.MessageType;
+import distributedpontoon.shared.PontoonLogger;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
@@ -15,6 +16,8 @@ import java.util.Calendar;
 import java.util.HashMap;
 import java.util.Scanner;
 import java.util.Set;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * A TCP server that listens for connections on a specified port. When a client 
@@ -22,8 +25,8 @@ import java.util.Set;
  * to play a game against.
  * 
  * @author 6266215
- * @version 1.2
- * @since 2015-02-18
+ * @version 1.3
+ * @since 2015-02-19
  */
 public class Server implements Runnable
 {
@@ -47,6 +50,8 @@ public class Server implements Runnable
     /** A mapping of {@link IServerGame} instances to their executing thread. */
     private final HashMap<IServerGame, Thread> games;
     
+    static final Logger logger = Logger.getLogger(Logger.GLOBAL_LOGGER_NAME);
+    
     /**
      * Creates a new instance of {@link Server} listening on port 50,000.
      * 
@@ -61,6 +66,13 @@ public class Server implements Runnable
         this.dirServer = "localhost";
         this.dirPort = 55552;
         this.games = new HashMap<>();
+        
+        try {
+            PontoonLogger.setup("server");
+        } catch (IOException ex) {
+            serverError("Error setting up logging. Reason\n%s", 
+                    ex.getMessage());
+        }
     }
     
     /**
@@ -196,11 +208,16 @@ public class Server implements Runnable
         } catch (InterruptedException intEx) {
             serverMessage("Server thread was interrupted incorrectly.");
         }
+        
+        try {
+            PontoonLogger.close();
+        } catch (IOException ex) {
+            serverError("Failed to close logger. Reason:\n%s", ex.getMessage());
+        }
     }
     
     /**
-     * Prints information messages to the current {@link System#out} output 
-     * stream.
+     * Prints information messages to the current {@link Logger} output.
      * 
      * @param msg The message to print as a String. Accepts formatting 
      * parameters similarly to {@link String#format(java.lang.String, 
@@ -213,16 +230,12 @@ public class Server implements Runnable
      */
     private synchronized void serverMessage(String msg, Object...args)
     {
-        SimpleDateFormat fmt = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss");
-        Calendar cal = Calendar.getInstance();
-        String formattedDate = fmt.format(cal.getTime());
         msg = String.format(msg, args);
-        System.out.printf("SERVER (%s): %s\n", formattedDate, msg);
+        logger.log(Level.INFO, "{0}", new Object[] {msg});
     }
     
     /**
-     * Prints information messages to the current {@link System#err} output 
-     * stream.
+     * Prints information messages to the current {@link Logger} output.
      * 
      * @param msg The message to print as a String. Accepts formatting 
      * parameters similarly to {@link String#format(java.lang.String, 
@@ -235,11 +248,8 @@ public class Server implements Runnable
      */
     private synchronized void serverError(String msg, Object...args)
     {
-        SimpleDateFormat fmt = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss");
-        Calendar cal = Calendar.getInstance();
-        String formattedDate = fmt.format(cal.getTime());
         msg = String.format(msg, args);
-        System.err.printf("SERVER (%s): %s\n", formattedDate, msg);
+        logger.log(Level.WARNING, "{0}", new Object[] {msg});
     }
     
     /**
@@ -312,6 +322,7 @@ public class Server implements Runnable
     public void unregisterGame(int id)
     {
         Socket directorySocket;
+        
         try {
             InetAddress address = InetAddress.getByName(dirServer);
             directorySocket = new Socket(address, dirPort);
@@ -329,6 +340,28 @@ public class Server implements Runnable
                     dirServer);
         } catch (IOException ioEx) {
             serverError("Could not unregister game with directory server.");
+        } finally {
+            removeGame(id);
+        }
+    }
+    
+    /**
+     * Removes a specified {@link IServerGame} and its assigned {@link Thread} 
+     * from the stored mapping in this {@link Server}.
+     * 
+     * @param id The unique ID of the {@link IServerGame} to remove as an int.
+     * @since 1.3
+     */
+    public void removeGame(int id)
+    {
+        IServerGame game = null;
+        for (IServerGame g : games.keySet())
+            if (g.getGameID() == id)
+                game = g;
+        
+        if (game != null) {
+            games.remove(game);
+            serverMessage("Removed game %d.", id);
         }
     }
     

@@ -1,17 +1,23 @@
 package distributedpontoon.shared;
 
 import distributedpontoon.client.IPlayer;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * A generic base for a game of cards. Tracks the current game ID and the total 
  * number of games that have run.
  * 
  * @author 6266215
- * @version 1.3
- * @since 2015-02-10
+ * @version 1.4
+ * @since 2015-02-19
  */
 public abstract class IGame implements Runnable {
     
+    /** Provides logging for all the games run. */
+    protected static final Logger logger = 
+            Logger.getLogger(Logger.GLOBAL_LOGGER_NAME);
+        
     /**
      * Passed from the server to the client when the players hand wins.
      * 
@@ -75,11 +81,11 @@ public abstract class IGame implements Runnable {
      * @since 1.1
      * @see String#format(java.lang.String, java.lang.Object...)
      */
-    public synchronized void gameMessage(String msg, Object...args)
+    public final synchronized void gameMessage(String msg, Object...args)
     {
         String gameIDStr = gameID <= 0 ? "?" : String.valueOf(gameID);
         msg = String.format(msg, args);
-        System.out.printf("GAME %s: %s\n", gameIDStr, msg);
+        logger.log(Level.INFO, "GAME {0} : {1}", new Object[] {gameIDStr, msg});
     }
     
     /**
@@ -96,10 +102,11 @@ public abstract class IGame implements Runnable {
      * @since 1.1
      * @see String#format(java.lang.String, java.lang.Object...)
      */
-    public synchronized void gameError(String msg, Object...args)
+    public final synchronized void gameError(String msg, Object...args)
     {
         String gameIDStr = gameID <= 0 ? "?" : String.valueOf(gameID);
         msg = String.format(msg, args);
-        System.err.printf("GAME %s: %s\n", gameIDStr, msg);
+        logger.log(Level.WARNING, "GAME {0} : {1}", 
+                new Object[] {gameIDStr, msg});
     }
 }
