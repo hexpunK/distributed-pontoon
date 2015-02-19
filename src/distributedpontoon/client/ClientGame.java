@@ -362,6 +362,7 @@ public class ClientGame extends IClientGame
         try {
             output.writeObject(MessageType.TURN_RESPONSE);
             output.writeObject(PlayerAction.PLAYER_BUST);
+            output.writeObject(hand);
             output.flush();
         } catch (IOException ioEx) {
             System.err.println(ioEx.getMessage());

@@ -282,6 +282,7 @@ public class SinglePlayerGame extends IServerGame
         }
         
         MessageType reply; // The message sent from the connected client.
+        Hand h;
         
         try {
             while (!socket.isClosed()) {
@@ -329,7 +330,7 @@ public class SinglePlayerGame extends IServerGame
                         switch (action) {
                             case PLAYER_STICK:
                                 gameMessage("Player has stuck.");
-                                Hand h = (Hand)input.readObject();
+                                h = (Hand)input.readObject();
                                 checkHand(1, h);
                                 break;
                             case PLAYER_TWIST:
@@ -338,6 +339,7 @@ public class SinglePlayerGame extends IServerGame
                                 break;
                             case PLAYER_BUST:
                                 gameMessage("Player has bust.");
+                                input.readObject();
                                 dealerWin(1);
                                 break;
                             default:

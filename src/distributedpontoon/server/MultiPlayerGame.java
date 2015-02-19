@@ -132,6 +132,7 @@ public class MultiPlayerGame extends IServerGame
             Hand h = hands.get(plyID);
             checkHand(plyID, h);
         }
+        stop();
     }
 
     /**
@@ -152,6 +153,12 @@ public class MultiPlayerGame extends IServerGame
     {
         int plyTotal = h.total();
         
+        if (plyTotal > 21) {
+            gameMessage("Player %d is bust!", playerID);
+            dealerWin(playerID);
+            return;
+        }
+        
         boolean plyHas21 = (plyTotal == 21);
         boolean plyHas5Card = (plyHas21 && h.size() == 5);
         boolean plyHas2Card = (plyHas21 && h.size() == 2);
@@ -171,10 +178,11 @@ public class MultiPlayerGame extends IServerGame
             // Player has a Pontoon.
             if (dlrHas2Card) {
                 // Player and deal have the same hand, so a push occurs.
-                gameMessage("Player and Dealer have a Pontoon! Push.");
+                gameMessage("Player %d and Dealer have a Pontoon! Push.",
+                        playerID);
                 playerWin(playerID, false);
             } else {
-                gameMessage("Player wins with a Pontoon!");
+                gameMessage("Player %d wins with a Pontoon!", playerID);
                 playerWin(playerID, true);
             }
         } else if (plyHas5Card) {
@@ -185,21 +193,22 @@ public class MultiPlayerGame extends IServerGame
                 dealerWin(playerID);
             } else if (dlrHas5Card) {
                 // Player and deal have the same hand, so a push occurs.
-                gameMessage("Player and Dealer have a 5-card trick! Push.");
+                gameMessage("Player %d and Dealer have a 5-card trick! Push.",
+                        playerID);
                 playerWin(playerID, false);
             }else {
-                gameMessage("Player wins with a 5-card trick!");
+                gameMessage("Player %d wins with a 5-card trick!", playerID);
                 playerWin(playerID, false);
             }
         } else {
             // Any other possible hands.
             if (plyTotal >= dlrTotal) {
-                gameMessage("Player wins hand! Player: %d\tDealer: %d", 
-                    plyTotal, dlrTotal);
+                gameMessage("Player %d wins hand! Player %d: %d\tDealer: %d", 
+                    playerID, playerID, plyTotal, dlrTotal);
                 playerWin(playerID, false);
             } else {
-                gameMessage("Dealer wins hand! Player: %d\tDealer: %d", 
-                    plyTotal, dlrTotal);
+                gameMessage("Dealer wins hand! Player %d: %d\tDealer: %d", 
+                    playerID, plyTotal, dlrTotal);
                 dealerWin(playerID);
             }
         }
@@ -359,6 +368,7 @@ public class MultiPlayerGame extends IServerGame
         ObjectOutputStream out;
         ObjectInputStream in;
         MessageType reply;
+        Hand h;
         
         while (playerReady.isEmpty() || !isAllReady()) {
             for (int plyID : sockets.keySet()) {
@@ -424,10 +434,14 @@ public class MultiPlayerGame extends IServerGame
         
         while (!sockets.isEmpty()) {
         for (int plyID : sockets.keySet()) {
-            if (playerReady.get(plyID)) continue;
             Socket sckt = sockets.get(plyID);
             try {
-                if (!sckt.isClosed()) {          
+                if (isAllReady()) {
+                    checkAllHands();
+                    return;
+                }   
+                if (playerReady.get(plyID)) continue;
+                if (!sckt.isClosed()) {     
                     sckt.setSoTimeout(PLAYER_TIMEOUT);
                     try {
                         in = inputs.get(plyID);
@@ -451,20 +465,20 @@ public class MultiPlayerGame extends IServerGame
                             PlayerAction action = (PlayerAction)in.readObject();
                             switch (action) {
                                 case PLAYER_STICK:
-                                    gameMessage("Player has stuck.");
-                                    Hand h = (Hand)in.readObject();
+                                    gameMessage("Player %d has stuck.", plyID);
+                                    h = (Hand)in.readObject();
                                     hands.put(plyID, h);
                                     playerReady.put(plyID, true);
-                                    if (isAllReady()) checkAllHands();
                                     break;
                                 case PLAYER_TWIST:
-                                    gameMessage("Player has twisted.");
+                                    gameMessage("Player %d twists.", plyID);
                                     dealCard(plyID);
                                     break;
                                 case PLAYER_BUST:
-                                    gameMessage("Player has bust.");
+                                    gameMessage("Player %d has bust.", plyID);
+                                    h = (Hand)in.readObject();
+                                    hands.put(plyID, h);
                                     playerReady.put(plyID, true);
-                                    dealerWin(plyID);
                                     break;
                                 default:
                                     gameError("Unknown action recieved: '%s'", 
@@ -490,8 +504,6 @@ public class MultiPlayerGame extends IServerGame
             }
         }
         }
-        
-        stop();
     }
 
     /**
