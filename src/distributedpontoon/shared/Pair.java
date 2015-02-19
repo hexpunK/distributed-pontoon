@@ -39,7 +39,7 @@ public class Pair<L, R> implements Serializable
      * Overrides the default {@link Object#hashCode()} method to ensure that the
      *  hash for two {@link Pair}s with the same contents will match.
      * 
-     * @return 
+     * @return Returns a unique hash code as an int.
      * @see Object#hashCode() 
      * @since 1.0
      */

@@ -20,8 +20,15 @@ import javax.swing.SwingUtilities;
  */
 public class GUIPlayer extends HumanPlayer
 {   
+    /** The {@link ClientGUI} this {@link GUIPlayer} will use to play. */
     private ClientGUI gui;
     
+    /**
+     * Creates a new {@link GUIPlayer} with a default balance of 500 and a 
+     * default bet of 50.
+     * 
+     * @since 1.0
+     */
     public GUIPlayer()
     {
         super();
@@ -29,6 +36,12 @@ public class GUIPlayer extends HumanPlayer
         this.bet = 50;
     }
     
+    /**
+     * Sets up this {@link GUIPlayer}, creating the {@link ClientGUI} and 
+     * running any background threads.
+     * 
+     * @since 1.0
+     */
     @Override
     public void init()
     {
@@ -55,6 +68,12 @@ public class GUIPlayer extends HumanPlayer
         });
     }
 
+    /**
+     * Check to see if this {@link GUIPlayer} is in a game or not, and if so, 
+     * start running the game.
+     * 
+     * @since 1.0
+     */
     @Override
     public void startGame()
     {
@@ -72,9 +91,15 @@ public class GUIPlayer extends HumanPlayer
         } catch (InterruptedException ex) {
             Logger.getLogger(GUIPlayer.class.getName()).log(Level.SEVERE, null, ex);
         }
-        gui.joinGame();
     }
     
+    /**
+     * Request a move from this {@link GUIPlayer}. This method will block until 
+     * the {@link ClientGUI} tells the server what move to make.
+     * 
+     * @param caller The {@link IClientGame} that requested the move.
+     * @Since 1.0
+     */
     @Override
     public void play(IClientGame caller)
     {
@@ -103,6 +128,16 @@ public class GUIPlayer extends HumanPlayer
         }
     }
 
+    /**
+     * Display a message telling this {@link GUIPlayer} that they won the hand. 
+     * If they won with a Pontoon (2 cards worth 21 points), the message will 
+     * also tell them how many credits they won.
+     * 
+     * @param game The {@link IClientGame} the player has won.
+     * @param pontoon Set to true if this player won with a Pontoon, false 
+     * otherwise.
+     * @since 1.0
+     */
     @Override
     public void playerWin(final IClientGame game, boolean pontoon)
     {
@@ -137,6 +172,13 @@ public class GUIPlayer extends HumanPlayer
         );
     }
 
+    /**
+     * Display a message telling this {@link GUIPlayer} that they have lost the 
+     * hand.
+     * 
+     * @param game The {@link IClientGame} this player lost.
+     * @since 1.0
+     */
     @Override
     public void dealerWin(final IClientGame game)
     {
@@ -162,6 +204,13 @@ public class GUIPlayer extends HumanPlayer
         );
     }
 
+    /**
+     * Disconnects the game if it is connected, and resets the {@link ClientGUI}
+     *  to the menu state.
+     * 
+     * @param game The {@link IClientGame} that this player is leaving.
+     * @since 1.0
+     */
     @Override
     public void leaveGame(IClientGame game)
     {

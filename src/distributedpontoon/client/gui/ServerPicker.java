@@ -2,8 +2,9 @@ package distributedpontoon.client.gui;
 
 import distributedpontoon.client.IPlayer;
 import distributedpontoon.shared.IClientGame;
-import distributedpontoon.shared.Pair;
+import distributedpontoon.shared.IServerGame;
 import distributedpontoon.shared.Triple;
+import distributedpontoon.server.Server;
 import java.awt.BorderLayout;
 import java.awt.Dimension;
 import java.awt.Font;
@@ -21,23 +22,41 @@ import javax.swing.JScrollPane;
 import javax.swing.border.EmptyBorder;
 
 /**
- *
- * @author Jordan
+ * Gets and displays a list of known {@link Server}s and {@link IServerGame}s, 
+ * allowing a {@link IPlayer} to select the server to play on.
+ * 
+ * @author 6266215
+ * @version 1.0
+ * @since 2015-02-12
+ * @see JDialog
  */
 public class ServerPicker extends JDialog
 {
     private final IPlayer player;
-    private final IClientGame game;
     private final ClientGUI owner;
     private JPanel scrollList;
     
-    public ServerPicker(IPlayer player, IClientGame game, ClientGUI owner)
+    /**
+     * Creates a new {@link ServerPicker}, this will not display the GUI or get 
+     * the server listing, to do this call {@link ServerPicker#updateServers()}.
+     * 
+     * @param player The {@link IPlayer} to set the server details for.
+     * @param owner The {@link ClientGUI} to set the server details for.
+     * @since 1.0
+     */
+    public ServerPicker(IPlayer player, ClientGUI owner)
     {
         this.player = player;
-        this.game = game;
         this.owner = owner;
     }
     
+    /**
+     * Sets up the GUI elements for this {@link ServerPicker}. This will make 
+     * the {@link JDialog} a full modal, preventing it from losing focus to the 
+     * owning {@link ClientGUI}.
+     * 
+     * @since 1.0
+     */
     public final void initGUI()
     {
         this.setLayout(new BorderLayout());
@@ -56,6 +75,11 @@ public class ServerPicker extends JDialog
         this.setVisible(true);
     }
     
+    /**
+     * Updates the server listing.
+     * 
+     * @since 1.0
+     */
     public final void updateServers()
     {
         Set<Triple<String, Integer, Integer>> servers = player.findServers();
@@ -91,8 +115,19 @@ public class ServerPicker extends JDialog
         this.pack();
     }
     
+    /**
+     * A button that can hold an {@link Object} instance, allowing it to be 
+     * pulled out when needed. Other than this, {@link ObjectButton} behaves 
+     * like a normal {@link JButton}.
+     * 
+     * @param <T> The type of the item to store.
+     * @version 1.0
+     * @since 1.0
+     * @see JButton
+     */
     private final class ObjectButton<T> extends JButton
     {
+        /** The item to hold in this button. */
         private final T item;
 
         public ObjectButton()
@@ -104,7 +139,7 @@ public class ServerPicker extends JDialog
         public ObjectButton(Action a)
         { 
            super(a);
-            this.item = null; 
+           this.item = null; 
         }
 
         public ObjectButton(Icon icon)
@@ -154,9 +189,22 @@ public class ServerPicker extends JDialog
             this.item = item;
         }
         
+        /**
+         * Gets the item stored in this {@link ObjectButton}.
+         * 
+         * @return The object stored in this ObjectButton as a instance of type 
+         * &lt;T&gt;.
+         */
         public final T getItem() { return this.item; }
     }
     
+    /**
+     * Handles interactions with the {@link ObjectButton}s in this 
+     * {@link ServerPicker}.
+     * 
+     * @version 1.0
+     * @since 1.0
+     */
     private final class ButtonHandler implements ActionListener 
     {
         @Override

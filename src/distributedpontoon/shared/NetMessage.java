@@ -30,6 +30,8 @@ public class NetMessage<T> implements Serializable {
         REGISTER_SERVER,
         /** Sent by a {@link MultiPlayerGame} to register it as running. */
         REGISTER_GAME,
+        /** Sent by a {@link MultiPlayerGame} to register it has ended. */
+        UNREGISTER_GAME,
         /** Sent to a {@link DirectoryService} to request a list of servers. */
         QUERY_SERVERS,
         /** Sent from a {@link DirectoryService} to see if servers are up. */

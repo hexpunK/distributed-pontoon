@@ -1,6 +1,7 @@
 package distributedpontoon.client.gui;
 
 import distributedpontoon.client.ClientGame;
+import distributedpontoon.client.GUIPlayer;
 import distributedpontoon.client.IPlayer;
 import distributedpontoon.shared.Card;
 import distributedpontoon.shared.Card.CardRank;
@@ -8,6 +9,7 @@ import distributedpontoon.shared.Hand;
 import distributedpontoon.shared.IClientGame;
 import java.awt.BorderLayout;
 import java.awt.Color;
+import java.awt.Cursor;
 import java.awt.Dimension;
 import java.awt.FlowLayout;
 import java.awt.Insets;
@@ -27,18 +29,24 @@ import javax.swing.border.EmptyBorder;
 import javax.swing.border.MatteBorder;
 
 /**
- * 
+ * A Swing GUI for the {@link GUIPlayer} to use. Displays both the players hand 
+ * and the dealers hand, along with details on the players current balance, bet 
+ * and score.
  * 
  * @author 6266215
- * @version 1.0
+ * @version 1.2
+ * @since 2015-02-16
+ * @see JFrame
  */
 public class ClientGUI extends JFrame
 {
+    /** This GUI should be a singleton, no point running multiple. */
     private static ClientGUI INSTANCE;
     private final IPlayer player;
     private final JPanel cardPanel, playerCards, dealerCards, buttonPanel, 
             infoPanel;
     private final JButton[] menuButtons;
+    private final JButton readyButton;
     private final JButton[] playButtons;
     private final JLabel playerScore, playerBal, playerBet, gameInfo;
     private final HashMap<Card, ImageIcon> cardIcons;
@@ -50,6 +58,14 @@ public class ClientGUI extends JFrame
     public static final boolean PLAYER = true;
     public static final boolean DEALER = false;
     
+    /**
+     * Creates a new instance of the {@link ClientGUI}. Sets up all of the UI 
+     * elements and organises them for the default layout and visibility.
+     * 
+     * @param player The {@link IPlayer} that will interact with this GUI. Used 
+     * for getting game details.
+     * @since 1.0
+     */
     private ClientGUI(IPlayer player)
     {
         this.player = player;
@@ -95,6 +111,11 @@ public class ClientGUI extends JFrame
         pickServer.addActionListener(new ButtonListener());
         pickServer.setVisible(true);
         
+        readyButton = new JButton("Ready");
+        readyButton.setSize(buttonSize);
+        readyButton.addActionListener(new ButtonListener());
+        readyButton.setVisible(false);
+        
         JButton quit = new JButton("Quit");
         quit.setSize(buttonSize);
         quit.addActionListener(new ButtonListener());
@@ -136,15 +157,12 @@ public class ClientGUI extends JFrame
         
         this.cardPanel = new JPanel();
         this.cardPanel.setLayout(new BorderLayout());
-        this.cardPanel.add(gameInfo);
         
         this.playerCards = new JPanel();
         this.playerCards.setLayout(new FlowLayout(FlowLayout.CENTER, 10, 10));
-        this.cardPanel.add(playerCards, BorderLayout.SOUTH);
         
         this.dealerCards = new JPanel();
         this.dealerCards.setLayout(new FlowLayout(FlowLayout.CENTER, 10, 10));
-        this.cardPanel.add(dealerCards, BorderLayout.NORTH);
         
         this.buttonPanel = new JPanel();
         this.buttonPanel.setLayout(new FlowLayout());
@@ -152,6 +170,11 @@ public class ClientGUI extends JFrame
             this.buttonPanel.add(button);
         for (JButton button : playButtons)
             this.buttonPanel.add(button);
+        
+        this.cardPanel.add(readyButton);
+        this.cardPanel.add(gameInfo);
+        this.cardPanel.add(playerCards, BorderLayout.SOUTH);
+        this.cardPanel.add(dealerCards, BorderLayout.NORTH);
         
         this.infoPanel = new JPanel();
         this.infoPanel.setLayout(new BorderLayout());
@@ -167,6 +190,14 @@ public class ClientGUI extends JFrame
         this.toFront();
     }
     
+    /**
+     * Gets the singleton instance of {@link ClientGUI}, if none exists a new 
+     * one is created.
+     * 
+     * @param player The {@link IPlayer} that will interact with this GUI.
+     * @return Returns the singleton instance of {@link ClientGUI}.
+     * @since 1.0
+     */
     public synchronized static ClientGUI getInstance(IPlayer player)
     {
         if (ClientGUI.INSTANCE == null) {
@@ -176,6 +207,14 @@ public class ClientGUI extends JFrame
         return ClientGUI.INSTANCE;
     }
     
+    /**
+     * Creates a new {@link ImageIcon} from the specified path and sets the 
+     * description in the image to the specified String.
+     * 
+     * @param path The file path and file name of the image to load.
+     * @param description The description of the image.
+     * @return A new {@link ImageIcon} instance.
+     */
     private ImageIcon createImageIcon(String path, String description)
     {
         java.net.URL imgURL = getClass().getResource(path);
@@ -187,6 +226,14 @@ public class ClientGUI extends JFrame
         }
     }
     
+    /**
+     * Sets the {@link IClientGame} this {@link ClientGUI} will connect to.
+     * 
+     * @param server The host name or IP address of the server as a String.
+     * @param port The port to connect to as an int.
+     * @param gameID The game ID as an int. If this is -1 or 0 new games will be
+     *  created, otherwise an existing game will be joined if one exists.
+     */
     public void setGame(String server, int port, int gameID)
     {
         if (game != null)
@@ -201,6 +248,12 @@ public class ClientGUI extends JFrame
         updateBet();
     }
     
+    /**
+     * Updates the {@link JLabel} that contains the {@link IPlayer}s current bet
+     *  , uses the running {@link IClientGame} to get the bet amount.
+     * 
+     * @since 1.1
+     */
     public void updateBet()
     {
         if (game != null)
@@ -209,6 +262,13 @@ public class ClientGUI extends JFrame
             playerBet.setText("Join a game first!");
     }
     
+    /**
+     * Sets the {@link Hand} used to display the {@link Card}s in the GUI.
+     * 
+     * @param hand The {@link Hand} to get {@link Card} objects from.
+     * @param dealer Set to true if this is the dealers hand, false otherwise.
+     * @since 1.0
+     */
     public synchronized void setHand(Hand hand, boolean dealer)
     {
         if (dealer == DEALER)
@@ -230,6 +290,7 @@ public class ClientGUI extends JFrame
             cardButton.setContentAreaFilled(false);
             cardButton.setBorder(null);
             cardButton.setMargin(new Insets(0, 0, 0, 0));
+            // Aces need to be interactive buttons.
             if (dealer == PLAYER && card.Rank == CardRank.ACE) {
                 cardButton.setActionCommand(card.getName());
                 cardButton.setEnabled(true);
@@ -258,48 +319,91 @@ public class ClientGUI extends JFrame
                 playerScore.setText(String.format("Player Score: %d", 
                         hand.total()));
             }
+            // Make sure these are up to date.
             dealerCards.updateUI();
             playerCards.updateUI();
         }
     }
     
+    /**
+     * Connects to the game selected. Removes menu GUI elements and replaces 
+     * them with game elements.
+     * 
+     * @since 1.0
+     */
     public void joinGame()
     {
-        playerCards.setVisible(true);
-        dealerCards.setVisible(true);
         gameInfo.setVisible(false);
         for (JButton button : menuButtons)
             button.setVisible(false);
-        for (JButton button : playButtons)
-            button.setVisible(true);
-        setHand(game.getHand(), PLAYER);
+        readyButton.setVisible(true);
         playerBet.setText(String.format("Bet: %d", game.getBet()));
         playerBal.setText(String.format("Player Balance: %d", 
                 player.getBalance()));
+        player.startGame();
+    }
+    
+    /**
+     * Tells the game to start running.
+     * 
+     * @since 1.2
+     */
+    public void playGame()
+    {
+        readyButton.setVisible(false);
+        for (JButton button : playButtons)
+            button.setVisible(true);
+        setHand(game.getHand(), PLAYER);
         Hand tmpDlrHand = new Hand();
         tmpDlrHand.addCard(null);
         tmpDlrHand.addCard(null);
         setHand(tmpDlrHand, DEALER);
+        playerCards.setVisible(true);
+        dealerCards.setVisible(true);
     }
     
+    /**
+     * Enables the buttons that the player needs to use to take their turn.
+     * 
+     * @since 1.0
+     */
     public void readyTurn()
     {
         for (JButton button : playButtons)
             button.setEnabled(true);
         turnTaken = false;
+        this.setCursor(Cursor.getDefaultCursor());
     }
     
+    /**
+     * Disables the buttons that the player uses to take their turn.
+     * 
+     * @since 1.0
+     */
     public void endTurn()
     {
         setHand(game.getHand(), PLAYER);
         for (JButton button : playButtons)
             button.setEnabled(false);
+        this.setCursor(Cursor.getPredefinedCursor(Cursor.WAIT_CURSOR));
     }
     
+    /**
+     * Checks to see if the player has taken their turn yet.
+     * 
+     * @return Returns true if the player has taken their turn, false otherwise.
+     * @since 1.0
+     */
     public synchronized boolean isTurnTaken() { return turnTaken; }
     
+    /**
+     * Disconnects from the current game, setting the UI back to the main menu.
+     * 
+     * @since 1.0
+     */
     public void leaveGame()
     {
+        this.setCursor(Cursor.getDefaultCursor());
         playerCards.setVisible(false);
         dealerCards.setVisible(false);
         gameInfo.setVisible(true);
@@ -312,6 +416,12 @@ public class ClientGUI extends JFrame
                 player.getBalance()));
     }
     
+    /**
+     * Handles the various button presses in this GUI.
+     * 
+     * @version 1.0
+     * @since 1.0
+     */
     private final class ButtonListener implements ActionListener
     {   
         @Override
@@ -319,7 +429,7 @@ public class ClientGUI extends JFrame
         {
             switch (ae.getActionCommand()) {
                 case "Play Game":
-                    player.startGame();
+                    joinGame();
                     break;
                 case "Change Bet":
                     String answ = JOptionPane.showInputDialog(
@@ -340,8 +450,12 @@ public class ClientGUI extends JFrame
                     break;
                 case "Pick Server":
                     final ServerPicker picker = 
-                            new ServerPicker(player, game, ClientGUI.INSTANCE);
+                            new ServerPicker(player, ClientGUI.INSTANCE);
                     picker.initGUI();
+                    break;
+                case "Ready":
+                    game.startGame();
+                    playGame();
                     break;
                 case "Quit":
                     player.leaveGame(game);

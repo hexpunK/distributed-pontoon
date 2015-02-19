@@ -13,6 +13,7 @@ import java.net.Socket;
 import java.net.SocketException;
 import java.net.SocketTimeoutException;
 import java.util.HashMap;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * An implementation of {@link IServerGame} that can handle multiple players 
@@ -22,19 +23,24 @@ import java.util.HashMap;
  */
 public class MultiPlayerGame extends IServerGame
 {
-    private final HashMap<Integer, Socket> sockets;
-    private final HashMap<Integer, Boolean> playerReady;
-    private final HashMap<Integer, ObjectOutputStream> outputs;
-    private final HashMap<Integer, ObjectInputStream> inputs;
+    public static final int PLAYER_TIMEOUT = 20000;
+    private final ConcurrentHashMap<Integer, Socket> sockets;
+    private final ConcurrentHashMap<Integer, Hand> hands;
+    private final ConcurrentHashMap<Integer, Boolean> playerReady;
+    private final ConcurrentHashMap<Integer, ObjectOutputStream> outputs;
+    private final ConcurrentHashMap<Integer, ObjectInputStream> inputs;
     private int playerCount;
     
     public MultiPlayerGame()
     {
         super();
-        this.sockets = new HashMap<>();
-        this.playerReady = new HashMap<>();
-        this.outputs = new HashMap<>();
-        this.inputs = new HashMap<>();
+        this.sockets = new ConcurrentHashMap<>();
+        this.hands = new ConcurrentHashMap<>();
+        this.playerReady = new ConcurrentHashMap<>();
+        this.outputs = new ConcurrentHashMap<>();
+        this.inputs = new ConcurrentHashMap<>();
+        
+        Server.getInstance().registerGame(gameID);
     }
     
     @Override
@@ -50,13 +56,12 @@ public class MultiPlayerGame extends IServerGame
         sockets.put(playerID, socket);
         playerReady.put(playerID, false);
         
-        ObjectOutputStream output;
         try {
             outputs.put(
                     playerID, 
                     new ObjectOutputStream(socket.getOutputStream())
             );
-            output = outputs.get(playerID);
+            ObjectOutputStream output = outputs.get(playerID);
             output.writeObject(MessageType.JOIN_ACKNOWLEDGE);
             output.writeInt(playerID);
             output.writeInt(gameID);
@@ -79,15 +84,21 @@ public class MultiPlayerGame extends IServerGame
             gameMessage("Deck emptied!");
         }
     }
+    
+    public void checkAllHands() throws IOException
+    {
+        gameMessage("All players stuck or bust.");
+        for (int plyID : hands.keySet()) {
+            Hand h = hands.get(plyID);
+            checkHand(plyID, h);
+        }
+    }
 
     @Override
-    public void checkHand(int playerID, Hand h, int clientPts) 
+    public void checkHand(int playerID, Hand h) 
             throws IOException 
     {
         int plyTotal = h.total();
-        if (plyTotal != clientPts) {
-            gameError("Player lied about their score.");
-        }
         
         boolean plyHas21 = (plyTotal == 21);
         boolean plyHas5Card = (plyHas21 && h.size() == 5);
@@ -192,6 +203,7 @@ public class MultiPlayerGame extends IServerGame
     {
         for (int playerID : sockets.keySet())
             removePlayer(playerID);
+        Server.getInstance().unregisterGame(gameID);
     }
     
     private boolean isAllReady()
@@ -233,7 +245,7 @@ public class MultiPlayerGame extends IServerGame
                 
                 Socket sckt = sockets.get(plyID);
                 try {
-                    sckt.setSoTimeout(10000);
+                    sckt.setSoTimeout(PLAYER_TIMEOUT);
                     // See if the current client is ready or not.
                     if (!inputs.containsKey(plyID)) {
                         inputs.put(
@@ -243,25 +255,30 @@ public class MultiPlayerGame extends IServerGame
                     }
                     in = inputs.get(plyID);
                     reply = (MessageType)in.readObject();
-                    if (reply == MessageType.CLIENT_READY)
+                    if (reply == MessageType.CLIENT_READY) {
                         playerReady.put(plyID, true);
-                    // Initialise the game for a connecting client.
-                    out = outputs.get(plyID);
-                    out.writeObject(MessageType.GAME_INITIALISE);
-                    try {
-                        out.writeObject(deck.pullCard());
-                        out.writeObject(deck.pullCard());
-                    } catch (Deck.DeckException deckEx) {
-                        gameError(deckEx.getMessage());
+                        // Initialise the game for a connecting client.
+                        out = outputs.get(plyID);
+                        out.writeObject(MessageType.GAME_INITIALISE);
+                        try {
+                            out.writeObject(deck.pullCard());
+                            out.writeObject(deck.pullCard());
+                        } catch (Deck.DeckException deckEx) {
+                            gameError(deckEx.getMessage());
+                        }
+                        out.flush();
+                    } else {
+                        gameError("Unexpected message from player %d: %s", 
+                                plyID, reply);
                     }
-                    out.flush();
                 } catch (SocketException sockEx) {
                     gameError("Couldn't set timeout on player %d.", plyID);
                 } catch (SocketTimeoutException timeEx) {
                     gameError("Player %d timed out!", plyID);
                     removePlayer(plyID);
                 } catch (IOException | ClassNotFoundException ioEx) {
-                    
+                    gameError("Error communicating with client %d.\n%s", 
+                            plyID, ioEx.getMessage());
                 }
                 if (connectTries.containsKey(plyID))
                     connectTries.put(plyID, connectTries.get(plyID)+1);
@@ -277,17 +294,23 @@ public class MultiPlayerGame extends IServerGame
             gameError(deckEx.getMessage());
         }
         
+        for (int plyID : playerReady.keySet())
+            playerReady.put(plyID, false);
+        
         while (!sockets.isEmpty()) {
         for (int plyID : sockets.keySet()) {
             Socket sckt = sockets.get(plyID);
             try {
-                if (!sckt.isClosed()) {
-                    sckt.setSoTimeout(5000);
+                if (!sckt.isClosed()) {          
+                    sckt.setSoTimeout(PLAYER_TIMEOUT);
                     try {
                         in = inputs.get(plyID);
                         reply = (MessageType)in.readObject();
                     } catch (IOException noMsg) {
-                        continue;
+                        gameError("Error retrieving message. Reason:\n%s", 
+                            noMsg.getMessage());
+                        stop();
+                        return;
                     }
 
                     out = outputs.get(plyID);
@@ -304,8 +327,9 @@ public class MultiPlayerGame extends IServerGame
                                 case PLAYER_STICK:
                                     gameMessage("Player has stuck.");
                                     Hand h = (Hand)in.readObject();
-                                    int clientPts = in.readInt();
-                                    checkHand(plyID, h, clientPts);
+                                    hands.put(plyID, h);
+                                    playerReady.put(plyID, true);
+                                    if (isAllReady()) checkAllHands();
                                     break;
                                 case PLAYER_TWIST:
                                     gameMessage("Player has twisted.");
@@ -313,6 +337,7 @@ public class MultiPlayerGame extends IServerGame
                                     break;
                                 case PLAYER_BUST:
                                     gameMessage("Player has bust.");
+                                    playerReady.put(plyID, true);
                                     dealerWin(plyID);
                                     break;
                                 default:
@@ -339,5 +364,7 @@ public class MultiPlayerGame extends IServerGame
             }
         }
         }
+        
+        stop();
     }
 }

@@ -2,7 +2,6 @@ package distributedpontoon.server;
 
 import distributedpontoon.directoryservice.DirectoryService;
 import distributedpontoon.shared.IServerGame;
-import distributedpontoon.shared.NetMessage;
 import distributedpontoon.shared.NetMessage.MessageType;
 import java.io.IOException;
 import java.io.ObjectInputStream;
@@ -243,6 +242,13 @@ public class Server implements Runnable
         System.err.printf("SERVER (%s): %s\n", formattedDate, msg);
     }
     
+    /**
+     * Attempt to register this {@link Server} on the specified {@link 
+     * DirectoryService}. If this fails the server will continue to run, though 
+     * accessing it will require knowing the details of the server.
+     * 
+     * @since 1.1
+     */
     private void registerServer()
     {
         Socket directorySocket;
@@ -265,7 +271,15 @@ public class Server implements Runnable
         }
     }
     
-    private void registerGame(int id)
+    /**
+     * Attempt to register a {@link MultiPlayerGame} on the specified {@link 
+     * DirectoryService}. If this isn't possible, the game will be inaccessible 
+     * to other players.
+     * 
+     * @param id The game ID for the {@link MultiPlayerGame} being registered.
+     * @since 1.1
+     */
+    public void registerGame(int id)
     {
         Socket directorySocket;
         try {
@@ -285,6 +299,29 @@ public class Server implements Runnable
                     dirServer);
         } catch (IOException ioEx) {
             serverError("Could not register game with directory server.");
+        }
+    }
+    
+    public void unregisterGame(int id)
+    {
+        Socket directorySocket;
+        try {
+            InetAddress address = InetAddress.getByName(dirServer);
+            directorySocket = new Socket(address, dirPort);
+            ObjectOutputStream output = 
+                    new ObjectOutputStream(directorySocket.getOutputStream());
+            
+            serverMessage("Unregistering game %d with directory server...", id);
+            output.writeObject(MessageType.UNREGISTER_GAME);
+            output.writeUTF(hostName);
+            output.writeInt(port);
+            output.writeInt(id);
+            output.flush();
+        } catch (UnknownHostException hostEx) {
+            serverError("Directory server host '%s' may not exist.", 
+                    dirServer);
+        } catch (IOException ioEx) {
+            serverError("Could not unregister game with directory server.");
         }
     }
     
@@ -319,18 +356,14 @@ public class Server implements Runnable
                 Thread t;
                 switch (query) {
                     case POLL_SERVER:
-                        int[] gameIDs = new int[games.size()];
-                        int i = 0;
-                        for (IServerGame g : games.keySet()) {
-                            gameIDs[i++] = g.getGameID();
-                        }
+                        // Respond to polling from DirectoryServices.
                         ObjectOutputStream reply = 
                             new ObjectOutputStream(socket.getOutputStream());
                         reply.writeBoolean(true);
-                        reply.writeObject(gameIDs);
                         reply.flush();
                         break;
                     case CLIENT_JOIN_SP:
+                        // Set up single-player games.
                         serverMessage("Client %s connecting...", 
                                 socket.getInetAddress().getHostName());
                         game = new SinglePlayerGame();
@@ -344,26 +377,33 @@ public class Server implements Runnable
                         games.put(game, t);
                         break;
                     case CLIENT_JOIN_MP:
+                        // Set up multi-player games.
                         serverMessage("Client %s connecting...", 
                                 socket.getInetAddress().getHostName());
                         int gameID = input.readInt();
                         if (gameID <= 0) {
+                            // No valid game ID? Make a new one!
                             serverMessage("Starting new MP game...");
                             game = new MultiPlayerGame();
                             t = new Thread(game);
                             t.start();
                             games.put(game, t);
-                            registerGame(game.getGameID());
                         } else {
+                            // Otherwise try and find a valid game.
+                            boolean gFound = false;
                             for (IServerGame g : games.keySet()) {
                                 if (g.getGameID() == gameID) {
                                     serverMessage("Joining MP game %d...", 
                                             gameID);
                                     game = g;
+                                    gFound = true;
                                     break;
                                 }
-                                serverError("No MP game with the ID %d found.", 
-                                        gameID);
+                            }
+                            if (!gFound) {
+                                game = null;
+                                serverError("No MP game with the ID %d "
+                                        + "found.", gameID);
                             }
                         }
                         if (game != null) {
@@ -377,9 +417,9 @@ public class Server implements Runnable
                         serverError("Unknown message %s received.", query);
                 }
             } catch (IOException ioEx) {
-                System.err.printf("Error: %s\n", ioEx.getMessage());
+                serverError("Communication error: %s", ioEx.getMessage());
             } catch (ClassNotFoundException cnfEx) {
-                System.err.printf("Unknown object type recieved.\n%s\n",
+                serverError("Unknown object type recieved.\n%s",
                         cnfEx.getMessage());
             }
         }

@@ -2,7 +2,6 @@ package distributedpontoon.client;
 
 import distributedpontoon.shared.IClientGame;
 import distributedpontoon.shared.NetMessage.MessageType;
-import java.util.logging.Logger;
 
 /**
  * A base class for clients that will allow the user to play a game of Pontoon. 
@@ -117,43 +116,6 @@ public abstract class HumanPlayer extends IPlayer
      */
     @Override
     public abstract void play(IClientGame caller);
-    
-    /**
-     * Sets the amount of credits this {@link HumanPlayer} has to bet with.
-     * 
-     * @param bal The new amount of credits as an int.
-     * @since 1.0
-     */
-    @Override
-    public synchronized void setBalance(int bal) { balance = bal; }
-
-    /**
-     * Changes the amount of credits this {@link HumanPlayer} has to bet with by
-     *  the specified amount. To deduct credits use a negative value. This 
-     * method will also check if the player has any credits left and returns 
-     * true if there is at least one credit.
-     * 
-     * @param deltaBal The amount to adjust the player credits by as an int.
-     * @return Returns true if the player still has a positive balance, false 
-     * otherwise.
-     * @since 1.0
-     */
-    @Override
-    public synchronized boolean adjustBalance(int deltaBal)
-    { 
-        balance += deltaBal;
-        return balance > 0;
-    }
-
-    /**
-     * Gets the current amount of credits this {@link HumanPlayer} has left to 
-     * play with.
-     * 
-     * @return The number of credits to play with as an int.
-     * @since 1.0
-     */
-    @Override
-    public synchronized int getBalance() { return balance; }
     
     /**
      * Disconnects this {@link HumanPlayer} from the specified {@link 

@@ -51,7 +51,7 @@ public class SinglePlayerGame extends IServerGame
         this.socket = socket;
         
         try {
-            output = new ObjectOutputStream(socket.getOutputStream());
+            output = new ObjectOutputStream(this.socket.getOutputStream());
         } catch (IOException ioEx) {
             gameError("Could not get socket streams. Reason:\n\t%s", 
                     ioEx.getMessage());
@@ -84,13 +84,10 @@ public class SinglePlayerGame extends IServerGame
     }
 
     @Override
-    public void checkHand(int playerID, Hand h, int clientPts) 
+    public void checkHand(int playerID, Hand h) 
             throws IOException
     {
         int plyTotal = h.total();
-        if (plyTotal != clientPts) {
-            gameError("Player lied about their score.");
-        }
         
         boolean plyHas21 = (plyTotal == 21);
         boolean plyHas5Card = (plyHas21 && h.size() == 5);
@@ -209,6 +206,7 @@ public class SinglePlayerGame extends IServerGame
     {
         if (socket == null || socket.isClosed()) {
             gameMessage("No player registered for this game.");
+            stop();
             return;
         }
         
@@ -220,13 +218,18 @@ public class SinglePlayerGame extends IServerGame
                 if (input == null) {
                     try {
                         input = new ObjectInputStream(socket.getInputStream());
-                    } catch (IOException ex) { return; }
+                    } catch (IOException ex) { 
+                        System.err.println(ex.getMessage()); 
+                    }
                 }
                 
                 try {
                     reply = (MessageType)input.readObject();
                 } catch (IOException noMsg) {
-                    continue;
+                    gameError("Error retrieving message. Reason:\n%s", 
+                            noMsg.getMessage());
+                    stop();
+                    return;
                 }
                 
                 switch (reply) {
@@ -256,8 +259,7 @@ public class SinglePlayerGame extends IServerGame
                             case PLAYER_STICK:
                                 gameMessage("Player has stuck.");
                                 Hand h = (Hand)input.readObject();
-                                int clientPts = input.readInt();
-                                checkHand(1, h, clientPts);
+                                checkHand(1, h);
                                 break;
                             case PLAYER_TWIST:
                                 gameMessage("Player has twisted.");
@@ -275,7 +277,6 @@ public class SinglePlayerGame extends IServerGame
                     case CLIENT_DISCONNECT:
                         // Disconnect a client and close the game safely.
                         gameMessage("Player leaving.");
-                        stop();
                         break;
                     default:
                         gameError("Unknown message sent to game:\n\t%s", reply);
@@ -285,17 +286,7 @@ public class SinglePlayerGame extends IServerGame
             gameError("Error handling single player game. Reason:\n%s", 
                     ioEx.getMessage());
         } finally {
-            try {
-                if (input != null)
-                    input.close();
-                if (output != null)
-                    output.close();
-                if (socket != null)
-                    socket.close();
-            } catch (IOException ex) {
-                gameError("Failed to close game safely. Reason:\n%s", 
-                        ex.getMessage());
-            }
+            stop();
         }
     }
 }

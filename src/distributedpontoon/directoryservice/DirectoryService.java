@@ -1,9 +1,9 @@
 package distributedpontoon.directoryservice;
 
+import distributedpontoon.client.Client;
 import distributedpontoon.client.IPlayer;
 import distributedpontoon.server.Server;
 import distributedpontoon.shared.NetMessage.MessageType;
-import distributedpontoon.shared.Pair;
 import distributedpontoon.shared.Triple;
 import java.io.IOException;
 import java.io.ObjectInputStream;
@@ -11,7 +11,6 @@ import java.io.ObjectOutputStream;
 import java.net.InetAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Scanner;
 import java.util.Set;
@@ -44,6 +43,11 @@ public class DirectoryService implements Runnable
     /** A mapping of known host names to their ports. */
     private Set<Triple<String, Integer, Integer>> knownHosts;
     
+    /**
+     * Creates a new {@link DirectoryService} that listens on port 55552.
+     * 
+     * @since 1.0;
+     */
     private DirectoryService()
     {
         this.port = 55552;
@@ -53,6 +57,15 @@ public class DirectoryService implements Runnable
         this.knownHosts = new HashSet<>();
     }
     
+    /**
+     * Creates a new {@link DirectoryService} that listens on the specified 
+     * port.
+     * 
+     * @param port The port to listen on as an int.
+     * @throws IllegalArgumentException Thrown if the specified port is not a 
+     * valid TCP port.
+     * @since 1.0
+     */
     private DirectoryService(int port) throws IllegalArgumentException
     {
         if (port < 0 || port > 65536) {
@@ -68,6 +81,12 @@ public class DirectoryService implements Runnable
         this.knownHosts = new HashSet<>();
     }
     
+    /**
+     * Gets the singleton instance of {@link DirectoryService} for this process.
+     * 
+     * @return A new or existing instance of {@link DirectoryService}.
+     * @since 1.0
+     */
     public synchronized static DirectoryService getInstance()
     {
         if (DirectoryService.INSTANCE == null) {
@@ -76,6 +95,15 @@ public class DirectoryService implements Runnable
         return DirectoryService.INSTANCE;
     }
     
+    /**
+     * Gets the singleton instance of {@link DirectoryService} for this process.
+     *  The specified port will only cause the {@link DirectoryService} to 
+     * listen on it if it isn't created yet.
+     * 
+     * @param port The port to listen on as an int.
+     * @return A new or existing instance of {@link DirectoryService}.
+     * @since 1.0
+     */
     public synchronized static DirectoryService getInstance(int port)
     {
         if (DirectoryService.INSTANCE == null) {
@@ -110,24 +138,55 @@ public class DirectoryService implements Runnable
         }
     }
     
+    /**
+     * Registers a new {@link Server} with this {@link DirectoryService}.
+     * 
+     * @param hostName The name or IP address of the server as a String.
+     * @param port The port to connect to as an int.
+     * @param gameID The game ID to register as an int.
+     */
     public void addServer(String hostName, int port, int gameID)
     {
         knownHosts.add(new Triple<>(hostName, port, gameID));
     }
     
+    /**
+     * Gets a {@link Set} of {@link Triple}s containing the details of known 
+     * servers. The triple contains the following items;
+     * <ol>
+     *  <li>The host name/ IP address.</li>
+     *  <li>The port number.</li>
+     *  <li>The game ID (-1 is a new SP game, 0 is a new MP game).</li>
+     * </ol>
+     * 
+     * @return A {@link Set} of the known servers.
+     * @since 1.1
+     */
     public Set<Triple<String, Integer, Integer>> getKnownHosts() 
     { 
         return knownHosts; 
     }
     
-    public void removeServer(String hostName, int port)
+    /**
+     * Removes a server from the known servers listing.
+     * 
+     * @param hostName The name/ IP address of the server to remove as a String.
+     * @param port The port of the server to remove as an int.
+     * @param gameID The unique ID of a game to remove, this is only counted if 
+     * greater than zero (0).
+     * @since 1.0
+     */
+    public void removeServer(String hostName, int port, int gameID)
     {
         Triple toRemove = null;
         for (Triple host : knownHosts) {
             if (host.One.equals(hostName) && host.Two.equals(port))
             {
-                toRemove = host;
-                break;
+                if (gameID > 0 && host.Three.equals(gameID)) {
+                    toRemove = host;
+                    break;
+                } else
+                    toRemove = host;
             }
         }
         if (toRemove != null) knownHosts.remove(toRemove);
@@ -155,6 +214,14 @@ public class DirectoryService implements Runnable
         }
     }
 
+    /**
+     * Listens for connections from {@link Server}s, and registers them based on
+     *  the message sent to this {@link DirectoryService}. Also listens for 
+     * connections from {@link Client}s, and sends lists of the known servers 
+     * to them.
+     * 
+     * @since 1.0
+     */
     @Override
     public void run() 
     {
@@ -181,7 +248,7 @@ public class DirectoryService implements Runnable
                 
                 MessageType request = (MessageType)input.readObject();
                 String remoteName;
-                int remotePort;
+                int remotePort, gameID;
                 switch (request) {
                     case QUERY_SERVERS:
                         System.out.println("Sending list of known hosts...");
@@ -202,9 +269,18 @@ public class DirectoryService implements Runnable
                         System.out.println("Registering game...");
                         remoteName = input.readUTF();
                         remotePort = input.readInt();
-                        int gameID = input.readInt();
+                        gameID = input.readInt();
                         addServer(remoteName, remotePort, gameID);
                         System.out.printf("Registered game %s:%d - %d\n", 
+                                remoteName, remotePort, gameID);
+                        break;
+                    case UNREGISTER_GAME:
+                        System.out.println("Unregistering game...");
+                        remoteName = input.readUTF();
+                        remotePort = input.readInt();
+                        gameID = input.readInt();
+                        removeServer(remoteName, remotePort, gameID);
+                        System.out.printf("Unregistered game %s:%d - %d\n", 
                                 remoteName, remotePort, gameID);
                         break;
                     default:

@@ -4,7 +4,6 @@ import distributedpontoon.directoryservice.DirectoryService;
 import distributedpontoon.server.Server;
 import distributedpontoon.shared.IClientGame;
 import distributedpontoon.shared.NetMessage.MessageType;
-import distributedpontoon.shared.Pair;
 import distributedpontoon.shared.Triple;
 import java.io.IOException;
 import java.io.ObjectInputStream;
@@ -12,7 +11,6 @@ import java.io.ObjectOutputStream;
 import java.net.InetAddress;
 import java.net.Socket;
 import java.net.UnknownHostException;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Set;
 
@@ -126,14 +124,12 @@ public abstract class IPlayer
     public abstract void play(IClientGame caller);
     
     /**
-     * Sets the amount of credits this {@link IPlayer} has to bet with. 
-     * Different implementations of this interface may perform more operations 
-     * on the provided value.
+     * Sets the amount of credits this {@link IPlayer} has to bet with.
      * 
      * @param bal The new amount of credits as an int.
      * @since 1.0
      */
-    public abstract void setBalance(int bal);
+    public synchronized void setBalance(int bal) { this.balance = bal; }
     
     /**
      * Changes the amount of credits this {@link IPlayer} has to bet with by
@@ -146,7 +142,11 @@ public abstract class IPlayer
      * otherwise.
      * @since 1.0
      */
-    public abstract boolean adjustBalance(int deltaBal);
+    public synchronized boolean adjustBalance(int deltaBal)
+    {
+        this.balance += deltaBal;
+        return this.balance > 0;
+    }
     
     /**
      * Gets the current amount of credits this {@link IPlayer} has left to play 
@@ -155,7 +155,10 @@ public abstract class IPlayer
      * @return The number of credits to play with as an int.
      * @since 1.0
      */
-    public abstract int getBalance();
+    public synchronized int getBalance()
+    {
+        return this.balance;
+    }
     
     /**
      * Called when an {@link IPlayer} wins an {@link IClientGame}, specific 

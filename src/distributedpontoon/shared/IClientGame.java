@@ -1,7 +1,9 @@
 package distributedpontoon.shared;
 
 import distributedpontoon.client.IPlayer;
+import distributedpontoon.shared.IServerGame;
 import distributedpontoon.shared.Card;
+import distributedpontoon.shared.Hand;
 
 /**
  * A generalised base for the client side components of an {@link IGame}. This 
@@ -9,7 +11,7 @@ import distributedpontoon.shared.Card;
  * implementation for a {@link IPlayer}.
  * 
  * @author 6266215
- * @version 1.2
+ * @version 1.3
  * @since 2015-02-18
  */
 public abstract class IClientGame extends IGame {
@@ -84,6 +86,14 @@ public abstract class IClientGame extends IGame {
      * @since 1.0
      */
     public abstract void disconnect();
+    
+    /**
+     * Tell the {@link IServerGame} that this {@link IClientGame} is ready to 
+     * play.
+     * 
+     * @since 1.3
+     */
+    public abstract void startGame();
     
     /**
      * Called when the current {@link IPlayer} needs an instruction from the 

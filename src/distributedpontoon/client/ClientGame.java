@@ -4,6 +4,7 @@ import distributedpontoon.shared.Card;
 import distributedpontoon.shared.Hand;
 import distributedpontoon.shared.IClientGame;
 import distributedpontoon.shared.IGame;
+import distributedpontoon.shared.IServerGame;
 import distributedpontoon.shared.NetMessage.MessageType;
 import java.io.IOException;
 import java.io.ObjectInputStream;
@@ -13,31 +14,67 @@ import java.net.Socket;
 import java.net.UnknownHostException;
 
 /**
- *
+ * A client-side representation of a game of Pontoon. Stores the current {@link 
+ * Hand} for an {@link IPlayer}, and handles the connection to the server-side 
+ * version of this {@link IGame}. As a game of Pontoon is the player versus the 
+ * dealer, this {@link ClientGame} doesn't need to be aware of the other {@link 
+ * IPlayer}s in a game.
+ * 
  * @author 6266215
+ * @version 1.2
+ * @since 2015-02-16
  */
 public class ClientGame extends IClientGame
 {    
-    private final int port;
-    private final String serverName;
+    /** The port to connect to. */
+    private int port;
+    /** The host name or IP address to connect to. */
+    private String serverName;
+    /** The socket to connect to. */
     private Socket connection;
+    /** The output stream to write to the server with. */
     private ObjectOutputStream output;
+    private ObjectInputStream input;
+    /** An {@link IPlayer} to request moves from for this {@link ClientGame}. */
     private final IPlayer player;
-    private Hand hand, dealerHand;
+    /** The {@link Hand} for the player. */
+    private Hand hand;
+    /** The {@link Hand} for the dealer. */
+    private Hand dealerHand;
+    /** The current bet for this {@link ClientGame} as an int. */
     private int bet;
     
+    /**
+     * Creates a new {@link ClientGame} that connects to a server running on 
+     * the local machine (must be listening on port 55551).
+     * 
+     * @param player The {@link IPlayer} that will play this {@link ClientGame}.
+     * @param bet The bet the {@link IPlayer} has made on this game.
+     * @since 1.0
+     */
     public ClientGame(IPlayer player, int bet)
     {
         this.gameID = -1;
-        this.port = 50000;
+        this.port = 55551;
         this.serverName = "localhost";
         this.connection = null;
         this.output = null;
         this.hand = new Hand();
+        this.dealerHand = new Hand();
         this.player = player;
         this.bet = bet;
     }
     
+    /**
+     * Creates a new {@link ClientGame} that connects to a server running on 
+     * the specified host name/ IP address (must be listening on port 55551).
+     * 
+     * @param player The {@link IPlayer} that will play this {@link ClientGame}.
+     * @param bet The bet the {@link IPlayer} has made on this game.
+     * @param hostName The name/ IP address of the host to connect to as a 
+     * String.
+     * @since 1.0
+     */
     public ClientGame(IPlayer player, int bet, String hostName)
     {
         this.gameID = -1;
@@ -46,10 +83,24 @@ public class ClientGame extends IClientGame
         this.connection = null;
         this.output = null;
         this.hand = new Hand();
+        this.dealerHand = new Hand();
         this.player = player;
         this.bet = bet;
     }
     
+    /**
+     * Creates a new {@link ClientGame} that connects to a server running on 
+     * the specified host name/ IP address, using the specified port number.
+     * 
+     * @param player The {@link IPlayer} that will play this {@link ClientGame}.
+     * @param bet The bet the {@link IPlayer} has made on this game.
+     * @param hostName The name/ IP address of the host to connect to as a 
+     * String.
+     * @param port The port to connect through on the remote machine as an int.
+     * @throws IllegalArgumentException Thrown if the provided port number is 
+     * not a valid TCP port.
+     * @since 1.0
+     */
     public ClientGame(IPlayer player, int bet, String hostName, int port) 
             throws IllegalArgumentException
     {
@@ -69,6 +120,15 @@ public class ClientGame extends IClientGame
         this.bet = bet;
     }
     
+    /**
+     * Sets the bet for the current {@link ClientGame}. If the new bet is 
+     * greater than the players current balance, only the credits available will
+     *  be used instead.
+     * 
+     * @param newBet The new bet to use as an int.
+     * @throws IllegalArgumentException Thrown if the new bet is zero or lower.
+     * @since 1.0
+     */
     @Override
     public void setBet(int newBet) throws IllegalArgumentException
     {
@@ -82,15 +142,43 @@ public class ClientGame extends IClientGame
         bet = newBet;
     }
     
+    /**
+     * Gets the current bet the playing {@link IPlayer} has placed for this 
+     * game.
+     * 
+     * @return The current bet as an int.
+     * @since 1.0
+     */
     @Override
     public int getBet() { return bet; }
-    
+
+    /**
+     * Gets the {@link Hand} for the playing {@link IPlayer}.
+     * 
+     * @return A {@link Hand} object that may contain no {@link Card}s.
+     * @since 1.0
+     */
     @Override
     public synchronized Hand getHand() { return hand; }
     
+    /**
+     * Gets the {@link Hand} from the dealer. This will be empty until the game 
+     * has ended due to the dealers hand being unknown to players.
+     * 
+     * @return A {@link Hand} object that may be empty.
+     * @since 1.2
+     */
     @Override
     public synchronized Hand getDealerHand() { return dealerHand; }
     
+    /**
+     * Checks to see if this {@link ClientGame} is still connected to a remote 
+     * game.
+     * 
+     * @return Returns true if this {@link ClientGame} is still connected, false
+     *  otherwise.
+     * @since 1.0
+     */
     @Override
     public boolean isConnected()
     {
@@ -98,6 +186,14 @@ public class ClientGame extends IClientGame
         return connection.isConnected();
     }
     
+    /**
+     * Attempts to connect to a remote game specified by the host name and port 
+     * set for this {@link ClientGame}.
+     * 
+     * @return Returns true if the connection can be established, false 
+     * otherwise.
+     * @since 1.0
+     */
     @Override
     public boolean connect()
     {
@@ -105,15 +201,14 @@ public class ClientGame extends IClientGame
         try {
             InetAddress address = InetAddress.getByName(serverName);
             connection = new Socket(address, port);
-            ObjectOutputStream out = 
-                    new ObjectOutputStream(connection.getOutputStream());
-            if (gameID < 0)
-                out.writeObject(MessageType.CLIENT_JOIN_SP);
+            output = new ObjectOutputStream(connection.getOutputStream());
+            if (gameID < 0) // Tell the server what kind of game this is.
+                output.writeObject(MessageType.CLIENT_JOIN_SP);
             else {
-                out.writeObject(MessageType.CLIENT_JOIN_MP);
-                out.writeInt(gameID);
+                output.writeObject(MessageType.CLIENT_JOIN_MP);
+                output.writeInt(gameID);
             }
-            out.flush();
+            output.flush();
         } catch (UnknownHostException hostEx) {
             gameError(hostEx.getMessage());
             return false;
@@ -124,10 +219,16 @@ public class ClientGame extends IClientGame
         return true;
     }
     
+    /**
+     * Disconnects from the remote game.
+     * 
+     * @since 1.0
+     */
     @Override
     public void disconnect()
     {
         gameMessage("Disconnecting from game.");
+        this.gameID = -1;
         if (output == null || connection == null)
             return; // Output or connection is already closed.
         
@@ -143,6 +244,13 @@ public class ClientGame extends IClientGame
         }
     }
     
+    /**
+     * Starts running the game by telling the server that the {@link IPlayer} is
+     *  ready through sending a {@link MessageType#CLIENT_READY} message.
+     * 
+     * @since 1.1
+     */
+    @Override
     public void startGame()
     {
         hand = new Hand();
@@ -155,10 +263,16 @@ public class ClientGame extends IClientGame
         }
     }
 
+    /**
+     * Tells the server that the {@link IPlayer} playing this game is ready to 
+     * take their turn.
+     * 
+     * @since 1.0
+     */
     @Override
     public void ready()
     {
-        /* Tell the server that this {@link ClientGame} is ready. */
+        /* Tell the server that this player is ready. */
         if (!connection.isClosed()) {
             try {
                 output.writeObject(MessageType.PLAYER_READY);
@@ -169,6 +283,11 @@ public class ClientGame extends IClientGame
         }
     }
     
+    /**
+     * Tells the server that the {@link IPlayer} wants another {@link Card}.
+     * 
+     * @since 1.1
+     */
     @Override
     public void twist()
     {   
@@ -181,7 +300,17 @@ public class ClientGame extends IClientGame
         }
     }
     
-    public void acceptCard(Card card)
+    /**
+     * Adds the specified {@link Card} to the {@link Hand} for the {@link 
+     * IPlayer}. Automatically works out the soft total for the {@link Hand} and
+     *  adjusts and aces to prevent the player going bust. Should the player go 
+     * bust this will automatically call {@link ClientGame#bust()}.
+     * 
+     * @param card The new {@link Card} to add to the {@link Hand} for the 
+     * player.
+     * @since 1.1
+     */
+    protected void acceptCard(Card card)
     {
         synchronized(this) {
             hand.addCard(card);
@@ -202,6 +331,12 @@ public class ClientGame extends IClientGame
         }
     }
     
+    /**
+     * Tells the server that the {@link IPlayer} doesn't want to take any more 
+     * turns.
+     * 
+     * @since 1.1
+     */
     @Override
     public void stand()
     {
@@ -209,13 +344,17 @@ public class ClientGame extends IClientGame
             output.writeObject(MessageType.TURN_RESPONSE);
             output.writeObject(PlayerAction.PLAYER_STICK);
             output.writeObject(hand);
-            output.writeInt(hand.total());
             output.flush();
         } catch (IOException ex) {
             gameError(ex.getMessage());
         }
     }
     
+    /**
+     * Tells the server that the {@link IPlayer} has gone bust.
+     * 
+     * @since 1.1
+     */
     @Override
     public void bust()
     {   
@@ -228,19 +367,29 @@ public class ClientGame extends IClientGame
         }
     }
     
+    /**
+     * Listens for instructions from the remote {@link IServerGame} that this 
+     * {@link IClientGame} is connected to.
+     * 
+     * @since 1.0
+     */
     @Override
     public void run()
     {
-        if (!connect()) return; // If connecting fails, just return.
+        if (!connect()) {
+            gameError("Could not connect to game.");
+            return;
+        } // If connecting fails, just return.
         
-        ObjectInputStream input;
         MessageType msg;
          
         try {
-            input = new ObjectInputStream(connection.getInputStream());
             output = new ObjectOutputStream(connection.getOutputStream());
+            input = new ObjectInputStream(connection.getInputStream());
         } catch (IOException ioEx) {
-            System.err.println(ioEx.getMessage());
+            gameError("Couldn't get input stream. Reason:\n%s", 
+                    ioEx.getMessage());
+            disconnect();
             return;
         }
         
@@ -250,7 +399,10 @@ public class ClientGame extends IClientGame
                 try {
                     msg = (MessageType)input.readObject();
                 } catch (IOException ex) {
-                    continue; // No message so keep polling.
+                    gameError("Error retrieving message. Reason:\n%s", 
+                            ex.getMessage());
+                    disconnect();
+                    return;
                 }
                 
                 switch (msg) {
@@ -259,7 +411,6 @@ public class ClientGame extends IClientGame
                         player.setPlayerID(this, input.readInt());
                         gameID = input.readInt();
                         gameMessage("Connected!");
-                        startGame();
                         break;
                     case GAME_INITIALISE:
                         // Accept the first two cards the dealer sends.
@@ -306,17 +457,10 @@ public class ClientGame extends IClientGame
                         gameError("Clients do not handle this type of "
                                 + "message (%s)\n", msg);
                 }
-            } catch (ClassNotFoundException cnfEx) {
-                gameError(cnfEx.getMessage());
-            } catch (IOException ioEx) {
-                gameError(ioEx.getMessage());
+            } catch (IOException | ClassNotFoundException ioEx) {
+                gameError("Couldn't read server message. Reason:\n%s", 
+                        ioEx.getMessage());
             }
-        }
-        
-        try {
-            input.close();
-        } catch (IOException innerIOEx) {
-            System.err.println(innerIOEx.getMessage());
         }
     }
 }

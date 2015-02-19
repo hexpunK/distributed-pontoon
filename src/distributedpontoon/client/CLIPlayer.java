@@ -5,10 +5,8 @@ import distributedpontoon.shared.Card.CardRank;
 import distributedpontoon.shared.IClientGame;
 import distributedpontoon.shared.Hand;
 import distributedpontoon.shared.NetMessage.MessageType;
-import distributedpontoon.shared.Pair;
 import distributedpontoon.shared.Triple;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.InputMismatchException;
 import java.util.Scanner;
 import java.util.Set;
@@ -50,10 +48,11 @@ public class CLIPlayer extends HumanPlayer
     public void init()
     {
         playing = true;
+        boolean running = true;
         Triple<String, Integer, Integer> server = new Triple<>("", -1, -1);
         String line;
         
-        while (playing) {
+        while (running) {
             System.out.println("What would you like to do?");
             line = input.nextLine().trim();
             switch(line) {
@@ -64,7 +63,7 @@ public class CLIPlayer extends HumanPlayer
                             = svrs.toArray(new Triple[svrs.size()]);
                     if (servers.length == 0) {
                         System.out.println("No servers found.");
-                        return;
+                        break;
                     }
                     System.out.println("Servers available:");
                     int i;
@@ -118,13 +117,21 @@ public class CLIPlayer extends HumanPlayer
                     game = new ClientGame(this, bet, server.One, server.Two);
                     game.setGameID(server.Three);
                     startGame();
+                    break;
+                case "r":
+                case "ready":
+                    if (game == null || !game.isConnected()) {
+                        System.out.println("Game is not connected.");
+                        break;
+                    }
+                    game.startGame();
                     try {
                         gameThread.join();
                     } catch (InterruptedException ex) {
                         System.err.println(ex.getMessage());
                     }
                     break;
-                    case "b":
+                case "b":
                 case "bet":
                     System.out.printf("Current bet is: %d\n", bet);
                     System.out.print("Please enter new bet: ");
@@ -145,6 +152,7 @@ public class CLIPlayer extends HumanPlayer
                 case "q":
                 case "quit":
                     playing = false;
+                    running = false;
                     break;
                 case "h":
                 case "help":
@@ -327,6 +335,7 @@ public class CLIPlayer extends HumanPlayer
         sb.append("\tserver (s) - Lets you select a new server to play on.\n");
         sb.append("\tport - Lets you select a new port to connect with.\n");
         sb.append("\tplay (p) - Starts a game with the current server.\n");
+        sb.append("\ready (r) - Tell the server you are ready to play.\n");
         sb.append("\tbet (b) - Adjusts the bet for the next hand by the "
                 + "specified amount.\n");
         sb.append("\tbalance (bal) - Displays your current balance.\n");

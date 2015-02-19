@@ -3,7 +3,6 @@ package distributedpontoon.client;
 import distributedpontoon.shared.Card;
 import distributedpontoon.shared.Hand;
 import distributedpontoon.shared.IClientGame;
-import distributedpontoon.shared.Pair;
 import distributedpontoon.shared.Triple;
 import java.util.HashMap;
 import java.util.Random;
@@ -15,6 +14,8 @@ import java.util.Set;
  * {@link Hand} is below a randomised threshold value (1 to 21 inclusive).
  * 
  * @author 6266215
+ * @version 1.1
+ * @since 2015-02-18
  */
 public class RoboPlayer extends IPlayer
 {
@@ -40,6 +41,12 @@ public class RoboPlayer extends IPlayer
         this.balance = 300;
     }
     
+    /**
+     * Gathers a list of known servers and games from the directory server, then
+     *  attempts to connect to each single player capable server.
+     * 
+     * @since 1.0
+     */
     @Override
     public void init()
     {
@@ -48,44 +55,88 @@ public class RoboPlayer extends IPlayer
         for (Triple server : servers) {
             String address = (String)server.One;
             int tmpPort = (int)server.Two;
-            if ((int)server.Three >= 0) continue;
+            if ((int)server.Three == 0) continue; // Ignore MP games.
+            System.out.println(server);
             IClientGame game = new ClientGame(this, 50, address, tmpPort);
+            game.setGameID((int)server.Three);
             Thread t = new Thread(game);
+            t.start();
             games.put(game, t);
-            playerIDs.put(game, -1);
+        }
+        playing = true;
+        try {
+            Thread.sleep(500);
+        } catch (InterruptedException ex) {
+            System.err.println(ex.getMessage());
         }
         startGame();
-        playing = true;
     }
 
+    /**
+     * Sets the player ID for the specified game to the specified int.
+     * 
+     * @param game The {@link IClientGame} to change the player ID of.
+     * @param id The new player ID as an int.
+     * @since 1.0
+     */
     @Override
     public void setPlayerID(IClientGame game, int id)
     {
-        if (playerIDs.containsKey(game))
-            playerIDs.put(game, id);
+        if (game == null) return;
+        playerIDs.put(game, id);
     }
     
+    /**
+     * Adds a new {@link IClientGame} to this {@link RoboPlayer}.
+     * 
+     * @param game The {@link IClientGame} to take part in.
+     * @since 1.0
+     */
     @Override
     public void reigsterGame(IClientGame game)
     {
+        if (game == null) return;
         Thread gameThread = new Thread(game);
         games.put(game, gameThread);
     }
 
+    /**
+     * Checks to see if this {@link RoboPlayer} is still playing a game of 
+     * Pontoon.
+     * 
+     * @return Returns true if this player is still in a game, false otherwise.
+     * @since 1.0
+     */
     @Override
     public synchronized boolean isPlaying() { return playing; }
     
+    /**
+     * Starts any stored {@link IClientGame}s.
+     * 
+     * @since 1.0
+     */
     @Override
     public void startGame()
     {
         System.out.printf("RoboPlayer with threshold %d started.\n", threshold);
-        for (IClientGame g : games.keySet())
-            games.get(g).start();
+        for (IClientGame g : games.keySet()) {
+            if (g.isConnected())
+                g.startGame();
+        }
     }
 
+    /**
+     * The specified {@link IClientGame} calls this when it needs input from 
+     * this {@link RoboPlayer}. The {@link RoboPlayer} will always call {@link 
+     * IClientGame#twist()} until their hand has a value over their threshold.
+     * 
+     * @param caller The {@link IClientGame} that needs a move from this player.
+     * @since 1.0
+     */
     @Override
     public void play(IClientGame caller)
     {
+        if (caller == null) return;
         if (caller.getHand().total() < threshold) {
             caller.twist();
             Hand hand = caller.getHand();
@@ -94,51 +145,61 @@ public class RoboPlayer extends IPlayer
                 if (card.Rank == Card.CardRank.ACE
                         && !card.isAceHigh()
                         && (hand.total() + 10) <= 21) {
-                    System.out.println("Making an ace high.");
                     card.setAceHigh(!card.isAceHigh());
                 }
             }
         } else {
             caller.stand();
         }
-    }    
-
-    @Override
-    public synchronized void setBalance(int bal) { this.balance = bal; }
-
-    @Override
-    public synchronized boolean adjustBalance(int deltaBal)
-    {
-        balance += deltaBal;
-        return balance > 0;
     }
-
-    @Override
-    public synchronized int getBalance() { return balance; }
     
+    /**
+     * Prints the details of this {@link RoboPlayer}s win to standard output.
+     * 
+     * @param game The {@link IClientGame} this player has won.
+     * @param pontoon Set to true if the player won with a pontoon (2 cards 
+     * totalling 21 points), false otherwise.
+     * @since 1.1
+     */
     @Override
     public synchronized void playerWin(IClientGame game, boolean pontoon) 
     {
+        if (game == null) return;
         if (pontoon) {
-            System.out.printf("Player won with a pontoon! Added %d credits.\n", 
+            game.gameMessage("Player won with a pontoon! Added %d credits.", 
                     game.getBet());
         } else {
-            System.out.printf("Player won! Bet of %d returned.\n",
+            game.gameMessage("Player won! Bet of %d returned.",
                     game.getBet());
         }
         System.out.printf("Current balance: %d\n", balance);
     }
 
+    /**
+     * Prints the details of this {@link RoboPlayer}s loss to the standard 
+     * output.
+     * 
+     * @param game The {@link IClientGame} this player lost.
+     * @since 1.1
+     */
     @Override
     public synchronized void dealerWin(IClientGame game)
     { 
-        System.out.printf("Dealer won. Removed %d credits.\n", game.getBet());
-        System.out.printf("Current balance: %d\n", balance);
+        if (game == null) return;
+        game.gameMessage("Dealer won. Removed %d credits.", game.getBet());
+        game.gameMessage("Current balance: %d", balance);
     }
     
+    /**
+     * Disconnects this {@link RoboPlayer} from the specified {@link 
+     * IClientGame}.
+     * 
+     * @param game The {@link IClientGame} to disconnect from.
+     */
     @Override
     public synchronized void leaveGame(IClientGame game)
     {
+        if (game == null) return;
         game.disconnect();
         try {
             Thread t = games.remove(game);

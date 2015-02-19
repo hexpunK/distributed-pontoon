@@ -3,9 +3,9 @@ package distributedpontoon.shared;
 import java.io.Serializable;
 
 /**
- * Stores tree objects in a related group. Accepts any {@link Object} child
- *  class, with both the left and right components capable of holding different 
- * types. A {@link Triple} is immutable once constructed.
+ * Stores three objects in a related group. Accepts any {@link Object} child
+ *  class, with each of the components capable of holding different types. A 
+ * {@link Triple} is immutable once constructed.
  * 
  * Why isn't something this simple in the Java Standard Library...
  * 
@@ -44,7 +44,7 @@ public class Triple<L, M, R> implements Serializable
      * Overrides the default {@link Object#hashCode()} method to ensure that the
      *  hash for two {@link Triple}s with the same contents will match.
      * 
-     * @return 
+     * @return Returns a unique hash code as an int.
      * @see Object#hashCode() 
      * @since 1.0
      */
