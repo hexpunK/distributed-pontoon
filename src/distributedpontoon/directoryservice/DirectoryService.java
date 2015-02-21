@@ -133,7 +133,7 @@ public class DirectoryService implements Runnable
             monitorThread.start();
             System.out.println("Server monitor started.");
         } catch (IOException ioEx) {
-            System.out.printf("Error intiialising server. Reason:\n\t%s\n", 
+            System.out.printf("Error intiialising server. Reason:%n\t%s%n", 
                     ioEx.getMessage());
         }
     }
@@ -225,7 +225,7 @@ public class DirectoryService implements Runnable
     @Override
     public void run() 
     {
-        System.out.printf("Server listening (%s:%d).\n", hostName, 
+        System.out.printf("Server listening (%s:%d).%n", hostName, 
                 server.getLocalPort());
         while (!server.isClosed())
         {
@@ -234,11 +234,11 @@ public class DirectoryService implements Runnable
                 socket = server.accept();
             } catch (IOException ioEx) {
                 System.out.printf(
-                        "Server could not connect to client. Reason:\n\t%s\n",
+                        "Server could not connect to client. Reason:%n\t%s%n",
                         ioEx.getMessage());
                 continue;
             }
-            System.out.printf("Client %s connecting...\n", 
+            System.out.printf("Client %s connecting...%n", 
                     socket.getInetAddress().getHostName());
             try {
                 ObjectOutputStream output = 
@@ -262,7 +262,7 @@ public class DirectoryService implements Runnable
                         remotePort = input.readInt();
                         addServer(remoteName, remotePort, -1);
                         addServer(remoteName, remotePort, 0);
-                        System.out.printf("Registered server %s:%d\n", 
+                        System.out.printf("Registered server %s:%d%n", 
                                 remoteName, remotePort);
                         break;
                     case REGISTER_GAME:
@@ -271,7 +271,7 @@ public class DirectoryService implements Runnable
                         remotePort = input.readInt();
                         gameID = input.readInt();
                         addServer(remoteName, remotePort, gameID);
-                        System.out.printf("Registered game %s:%d - %d\n", 
+                        System.out.printf("Registered game %s:%d - %d%n", 
                                 remoteName, remotePort, gameID);
                         break;
                     case UNREGISTER_GAME:
@@ -280,17 +280,17 @@ public class DirectoryService implements Runnable
                         remotePort = input.readInt();
                         gameID = input.readInt();
                         removeServer(remoteName, remotePort, gameID);
-                        System.out.printf("Unregistered game %s:%d - %d\n", 
+                        System.out.printf("Unregistered game %s:%d - %d%n", 
                                 remoteName, remotePort, gameID);
                         break;
                     default:
                         System.err.printf("Directory server does not support "
-                                + "message %s!\n", request);
+                                + "message %s!%n", request);
                 }
             } catch (IOException ioEx) {
-                System.err.printf("Error: %s\n", ioEx.getMessage());
+                System.err.printf("Error: %s%n", ioEx.getMessage());
             } catch (ClassNotFoundException cnfEx) {
-                System.err.printf("Unknown object type recieved.\n%s\n",
+                System.err.printf("Unknown object type recieved.%n%s%n",
                         cnfEx.getMessage());
             }
         }
@@ -317,9 +317,9 @@ public class DirectoryService implements Runnable
                 case "--help":
                     // Show a help message.
                     System.out.println(helpMessage());
-                    break;
+                    return;
                 default:
-                    System.err.printf("Unknown argument '%s'\n", args[i]);
+                    System.err.printf("Unknown argument '%s'%n", args[i]);
             }
         }
         
@@ -348,7 +348,7 @@ public class DirectoryService implements Runnable
                     running = false;
                     break;
                 default:
-                    System.out.printf("Unknown command '%s'.\n", line);
+                    System.out.printf("Unknown command '%s'.%n", line);
             }
         }
         server.kill();

@@ -75,7 +75,7 @@ public class CLIPlayer extends HumanPlayer
                         else if (servers[i].Three == 0)
                             gameType = "New Multi-player Game";
                         System.out.printf(
-                                "\t%d - %s:%d (%s)\n", 
+                                "\t%d - %s:%d (%s)%n", 
                                 i+1, servers[i].One, servers[i].Two, gameType
                         );
                     }
@@ -90,7 +90,7 @@ public class CLIPlayer extends HumanPlayer
                         continue;
                     }
                     if (serverNum <= 0 || serverNum > i) {
-                        System.out.printf("You can only enter 1-%d.\n", i);
+                        System.out.printf("You can only enter 1-%d.%n", i);
                         continue;
                     }
                     // Select the server at the specified index.
@@ -114,6 +114,10 @@ public class CLIPlayer extends HumanPlayer
                         System.out.println("Please select a server!");
                         continue;
                     }
+                    if (balance <= 0) {
+                        System.out.println("You do not have any credits!");
+                        continue;
+                    }
                     game = new ClientGame(this, bet, server.One, server.Two);
                     game.setGameID(server.Three);
                     startGame();
@@ -133,13 +137,13 @@ public class CLIPlayer extends HumanPlayer
                     break;
                 case "b":
                 case "bet":
-                    System.out.printf("Current bet is: %d\n", bet);
+                    System.out.printf("Current bet is: %d%n", bet);
                     System.out.print("Please enter new bet: ");
                     try {
                         int newBet = input.nextInt();
                         input.nextLine();
                         this.bet = Math.max(newBet, this.bet);
-                        System.out.printf("Bet changed!, New bet : %d\n",
+                        System.out.printf("Bet changed!, New bet : %d%n",
                                 this.bet);
                     } catch (InputMismatchException inEx) {
                         System.err.println("New bet can only be a number.");
@@ -147,7 +151,7 @@ public class CLIPlayer extends HumanPlayer
                     break;
                 case "bal":
                 case "balance":
-                    System.out.printf("Current balance: %d\n", getBalance());
+                    System.out.printf("Current balance: %d%n", getBalance());
                     break;
                 case "q":
                 case "quit":
@@ -157,7 +161,7 @@ public class CLIPlayer extends HumanPlayer
                 case "h":
                 case "help":
                 default:
-                    System.out.println(helpMenu());
+                    System.out.print(helpMenu());
             }
         }
     }
@@ -189,7 +193,7 @@ public class CLIPlayer extends HumanPlayer
                 break;
             case "bal":
             case "balance":
-                System.out.printf("Current balance: %d\n", getBalance());
+                System.out.printf("Current balance: %d%n", getBalance());
                 break;
             case "h":
             case "hand":
@@ -207,7 +211,7 @@ public class CLIPlayer extends HumanPlayer
                 break;
             case "help":
             default:
-                System.out.println(helpMessage());
+                System.out.print(helpMessage());
                 play(caller);
         }
     }
@@ -225,12 +229,12 @@ public class CLIPlayer extends HumanPlayer
     public void playerWin(IClientGame game, boolean pontoon) 
     {
         if (pontoon) {
-            System.out.printf("You won with a pontoon! Adding %d credits.\n", 
+            System.out.printf("You won with a pontoon! Adding %d credits.%n", 
                     game.getBet());
         } else {
-            System.out.printf("You won! Bet of %d returned.\n", game.getBet());
+            System.out.printf("You won! Bet of %d returned.%n", game.getBet());
         }
-        System.out.printf("Current balance: %d\n", balance);
+        System.out.printf("Current balance: %d%n", balance);
     }
 
     /**
@@ -243,8 +247,8 @@ public class CLIPlayer extends HumanPlayer
     @Override
     public void dealerWin(IClientGame game)
     { 
-        System.out.printf("Dealer won. Removing %d credits.\n", game.getBet());
-        System.out.printf("Current balance: %d\n", balance);
+        System.out.printf("Dealer won. Removing %d credits.%n", game.getBet());
+        System.out.printf("Current balance: %d%n", balance);
     }
 
     /**
@@ -276,12 +280,12 @@ public class CLIPlayer extends HumanPlayer
         for (Card c : cards) {
             if (c.Rank == Card.CardRank.ACE) {
                 aces.add(c);
-                System.out.printf("(%d) %s,\n", ++aceCount, c);
+                System.out.printf("(%d) %s,%n", ++aceCount, c);
             }
         }
         if (aces.size() > 0) {
             /* Let the user change the value of aces. */
-            System.out.printf("You have %d aces.\n", aceCount);
+            System.out.printf("You have %d aces.%n", aceCount);
             System.out.println("Select an ace to switch ('no' to stop):");
             String r = input.nextLine();
             switch (r) {
@@ -299,7 +303,7 @@ public class CLIPlayer extends HumanPlayer
                         return;
                     }
                     if (aceNum <= 0 || aceNum > aceCount) {
-                        System.out.printf("You can only enter 1-%d.\n", 
+                        System.out.printf("You can only enter 1-%d.%n", 
                                 aceCount);
                         return;
                     }
@@ -332,7 +336,7 @@ public class CLIPlayer extends HumanPlayer
         sb.append("\tbalance (bal) - Displays your current balance.\n");
         sb.append("\thand (h) - Displays the cards in your hand and their total"
                 + " point value.\n");
-        sb.append("\tquit (q) - Exits the current game.");
+        sb.append("\tquit (q) - Exits the current game.\n");
         
         return sb.toString();
     }
@@ -348,10 +352,11 @@ public class CLIPlayer extends HumanPlayer
         StringBuilder sb = new StringBuilder();
         sb.append("Pontoon Client CLI - Menu Help:\n");
         sb.append("\tCommand (Short) - Action\n");
+        sb.append("\tservers - Displays a list of known servers.\n");
         sb.append("\tserver (s) - Lets you select a new server to play on.\n");
         sb.append("\tport - Lets you select a new port to connect with.\n");
         sb.append("\tplay (p) - Starts a game with the current server.\n");
-        sb.append("\ready (r) - Tell the server you are ready to play.\n");
+        sb.append("\tready (r) - Tell the server you are ready to play.\n");
         sb.append("\tbet (b) - Adjusts the bet for the next hand by the "
                 + "specified amount.\n");
         sb.append("\tbalance (bal) - Displays your current balance.\n");

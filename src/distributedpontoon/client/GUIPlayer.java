@@ -156,11 +156,11 @@ public class GUIPlayer extends HumanPlayer
             System.err.println(ex.getMessage());
         }
         if (pontoon) {
-            msg = String.format("You won the hand with a Pontoon!\n"
+            msg = String.format("You won the hand with a Pontoon!%n"
                         + "Adding %d credits to balance.", 
                         game.getBet());
         } else {
-            msg = String.format("You won the hand!\n"
+            msg = String.format("You won the hand!%n"
                     + "Returning bet of %d credits.", 
                         game.getBet());
         }

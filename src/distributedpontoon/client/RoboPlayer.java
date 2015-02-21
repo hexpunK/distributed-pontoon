@@ -4,9 +4,12 @@ import distributedpontoon.shared.Card;
 import distributedpontoon.shared.Hand;
 import distributedpontoon.shared.IClientGame;
 import distributedpontoon.shared.Triple;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Random;
 import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.logging.Level;
 
 /**
  * An automated Pontoon player. This player will use the same tactic each game, 
@@ -22,9 +25,9 @@ public class RoboPlayer extends IPlayer
     /** The threshold for twisting for this {@link RoboPlayer}. */
     private final int threshold;
     /** A mapping of {@link IClientGame}s to their executing {@link Thread}s. */
-    private final HashMap<IClientGame, Thread> games;
+    private final ConcurrentHashMap<IClientGame, Thread> games;
     /** A mapping of {@link IClientGame}s to the player ID for each game. */
-    private final HashMap<IClientGame, Integer> playerIDs;
+    private final ConcurrentHashMap<IClientGame, Integer> playerIDs;
     
     /**
      * Creates a new {@link RoboPlayer} with a randomised threshold value and 
@@ -36,8 +39,8 @@ public class RoboPlayer extends IPlayer
     {
         Random randomiser = new Random();
         this.threshold = randomiser.nextInt(21);
-        this.games = new HashMap<>();
-        this.playerIDs = new HashMap<>();
+        this.games = new ConcurrentHashMap<>();
+        this.playerIDs = new ConcurrentHashMap<>();
         this.balance = 300;
     }
     
@@ -50,18 +53,21 @@ public class RoboPlayer extends IPlayer
     @Override
     public void init()
     {
+        System.out.printf("RoboPlayer with threshold %d started.%n", threshold);
+        System.out.printf("Joining %d game(s) per server.%n", Client.MAX_GAMES);
         Set<Triple<String, Integer, Integer>> servers = findServers();
         if (servers == null || servers.isEmpty()) return;
         for (Triple server : servers) {
             String address = (String)server.One;
             int tmpPort = (int)server.Two;
             if ((int)server.Three == 0) continue; // Ignore MP games.
-            System.out.println(server);
-            IClientGame game = new ClientGame(this, 50, address, tmpPort);
-            game.setGameID((int)server.Three);
-            Thread t = new Thread(game);
-            t.start();
-            games.put(game, t);
+            for (int i = 0; i < Client.MAX_GAMES; i++) {
+                IClientGame game = new ClientGame(this, 50, address, tmpPort);
+                game.setGameID((int)server.Three);
+                Thread t = new Thread(game);
+                t.start();
+                games.put(game, t);
+            }
         }
         playing = true;
         try {
@@ -69,7 +75,6 @@ public class RoboPlayer extends IPlayer
         } catch (InterruptedException ex) {
             System.err.println(ex.getMessage());
         }
-        startGame();
     }
 
     /**
@@ -111,17 +116,31 @@ public class RoboPlayer extends IPlayer
     public synchronized boolean isPlaying() { return playing; }
     
     /**
-     * Starts any stored {@link IClientGame}s.
+     * Starts any stored {@link IClientGame}s. If the {@link RoboPlayer} runs 
+     * out of funding, it will stop connecting to games.
      * 
      * @since 1.0
      */
     @Override
     public void startGame()
     {
-        System.out.printf("RoboPlayer with threshold %d started.\n", threshold);
+        ArrayList<IClientGame> toLeave = new ArrayList<>();
         for (IClientGame g : games.keySet()) {
-            if (g.isConnected())
-                g.startGame();
+            if (g.isConnected()) {
+                if (balance >= g.getBet())
+                    g.startGame();
+                else {
+                    g.gameError("Insufficient funds for game");
+                    toLeave.add(g);
+                }
+            } else {
+                g.gameError("Game not connected.");
+                toLeave.add(g);
+            }
+        }
+        
+        for (IClientGame g : toLeave) {
+            leaveGame(g);
         }
     }
 
@@ -172,7 +191,7 @@ public class RoboPlayer extends IPlayer
             game.gameMessage("Player won! Bet of %d returned.",
                     game.getBet());
         }
-        System.out.printf("Current balance: %d\n", balance);
+        System.out.printf("Current balance: %d%n", balance);
     }
 
     /**
@@ -187,7 +206,7 @@ public class RoboPlayer extends IPlayer
     { 
         if (game == null) return;
         game.gameMessage("Dealer won. Removed %d credits.", game.getBet());
-        game.gameMessage("Current balance: %d", balance);
+        System.out.printf("Current balance: %d%n", balance);
     }
     
     /**

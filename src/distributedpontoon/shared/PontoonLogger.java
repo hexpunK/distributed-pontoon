@@ -6,18 +6,18 @@ import java.util.Calendar;
 import java.util.logging.ConsoleHandler;
 import java.util.logging.FileHandler;
 import java.util.logging.Formatter;
+import java.util.logging.Handler;
 import java.util.logging.Level;
 import java.util.logging.LogManager;
 import java.util.logging.LogRecord;
 import java.util.logging.Logger;
-import java.util.logging.SimpleFormatter;
 
 /**
  * Handles the logging of system events to both files and consoles.
  * 
  * @author 6266215
- * @version 1.1
- * @since 2015-02-19
+ * @version 1.3
+ * @since 2015-02-21
  */
 public class PontoonLogger 
 {
@@ -29,6 +29,12 @@ public class PontoonLogger
     private static Formatter fileFmt;
     /** A {@link Formatter} for the console output. */
     private static Formatter conFmt;
+    /** The prefix of the output fie as a String. */
+    private static String prefix;
+    /** Set this to true to log to file, false to not log to file. */
+    public static boolean fileLog = true;
+    /** Set to true to get more verbose output to the console. */
+    public static boolean verbose = false;
     /** Prevents double configuration per-process. */
     private static boolean configured = false;
     
@@ -45,6 +51,7 @@ public class PontoonLogger
     {
         if (configured) return; // Prevent double configuration.
         
+        PontoonLogger.prefix = prefix;
         Logger logger = Logger.getLogger(Logger.GLOBAL_LOGGER_NAME);
         
         SimpleDateFormat fmt = new SimpleDateFormat("yyyy-MM-dd_HH-mm-ss");
@@ -53,18 +60,23 @@ public class PontoonLogger
                 prefix, fmt.format(cal.getTime()));
         
         logger.setUseParentHandlers(false); // Disable built in formatters.
-        logger.setLevel(Level.FINE); // Logging granularity.
+        logger.setLevel(Level.FINEST); // Logging granularity.
         
-        fileFmt = new SimpleFormatter();
+        fileFmt = new FileFormatter();
         conFmt = new ConsoleFormatter();
         
-        file = new FileHandler(fileName, true);
-        file.setLevel(Level.INFO);
-        file.setFormatter(fileFmt);
-        logger.addHandler(file);
+        if (fileLog) {
+            file = new FileHandler(fileName, true);
+            file.setLevel(Level.FINE);
+            file.setFormatter(fileFmt);
+            logger.addHandler(file);
+        }
         
         con = new ConsoleHandler();
-        con.setLevel(Level.FINE);
+        if (!verbose)
+            con.setLevel(Level.INFO);
+        else 
+            con.setLevel(Level.FINER);
         con.setFormatter(conFmt);
         logger.addHandler(con);
         
@@ -83,28 +95,68 @@ public class PontoonLogger
     {
         if (!configured) return;
         
-        file.close();
+        if (fileLog)
+            file.close();
         con.close();
         
         LogManager.getLogManager().reset();
     }
     
     /**
+     * Formats the logged messages to be place in a file.
+     * 
+     * @version 1.0
+     * @since 1.2
+     */
+    private static final class FileFormatter extends Formatter
+    {
+        @Override
+        public String getHead(Handler h) 
+        {
+            return String.format("Pontoon Log (%s)%nLogging start: %s%n%n", 
+                    PontoonLogger.prefix, getDateString());
+        }
+        
+        
+        @Override
+        public String format(LogRecord record) 
+        {            
+            return String.format("%s - %s%n", 
+                    getDateString(), formatMessage(record));
+        }
+
+        @Override
+        public String getTail(Handler h) 
+        {
+            return String.format("%nLogging end: %s%n", getDateString());
+        }
+        
+        /**
+         * Generate a ISO formatted date string.
+         * 
+         * @return A String containing the current date and time in ISO format.
+         * @since 1.0
+         */
+        private String getDateString()
+        {
+            SimpleDateFormat f = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss");
+            Calendar cal = Calendar.getInstance();
+            return f.format(cal.getTime());
+        }
+    }
+    
+    /**
      * Formats messages to print them out to a single line for console output.
      * 
+     * @version 1.0
      * @since 1.1
      */
     private static final class ConsoleFormatter extends Formatter
     {
         @Override
         public String format(LogRecord record) 
-        {
-            StringBuilder sb = new StringBuilder();
-            
-            sb.append(formatMessage(record));
-            sb.append(System.getProperty("line.separator"));
-            
-            return sb.toString();
+        {   
+            return String.format("%s%n", formatMessage(record));
         }
     }
 }

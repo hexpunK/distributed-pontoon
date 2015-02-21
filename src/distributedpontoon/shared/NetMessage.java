@@ -24,7 +24,7 @@ public class NetMessage<T> implements Serializable {
      * @version 1.2
      * @since 2015-02-06
      */
-    public static enum MessageType implements Serializable
+    public static enum MessageType
     {
         /** Sent to a {@link DirectoryService} to store this server on it. */
         REGISTER_SERVER,
@@ -71,6 +71,8 @@ public class NetMessage<T> implements Serializable {
     public final long MessageID;
     /** The total number of messages created. */
     public static volatile long MessageCount;
+    /** Serialisation ID. */
+    private static final long serialVersionUID = -23198619128710267L;
     
     /**
      * Creates a new {@link NetMessage} with the specified {@link MessageType} 

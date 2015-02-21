@@ -14,7 +14,7 @@ import java.util.Set;
  * @since 2015-02-03
  */
 public class Card implements Serializable
-{    
+{   
     /**
      * An enumeration of the valid values for cards in a standard playing card 
      * deck. Each enumerated value has an integer value corresponding to the 
@@ -23,7 +23,7 @@ public class Card implements Serializable
      * @version 1.0
      * @since 2015-02-03
      */
-    public static enum CardRank implements Serializable
+    public static enum CardRank
     {
         ACE(1),
         TWO(2),
@@ -41,8 +41,6 @@ public class Card implements Serializable
         
         /** The point value of the current card. */
         private final int value;
-        /** Serialisation ID. */
-        private static final long serialVersionUID = 1L;
         
         CardRank(int points)
         { 
@@ -57,15 +55,12 @@ public class Card implements Serializable
      * @version 1.0
      * @since 2015-02-03
      */
-    public static enum CardSuit implements Serializable
+    public static enum CardSuit
     {
         DIAMONDS,
         HEARTS,
         SPADES,
         CLUBS;
-        
-        /** Serialisation ID. */
-        private static final long serialVersionUID = 1L;
     }
     
     /**
@@ -77,7 +72,7 @@ public class Card implements Serializable
      */
     public static final Set<Card> ALL_CARDS;
     /** Serialisation ID. */
-    private static final long serialVersionUID = 1L;
+    private static final long serialVersionUID = -2034404490613286771L;
     
     static {
         // Static initialiser to give us all possible cards.

@@ -11,9 +11,6 @@ import java.net.InetAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.net.UnknownHostException;
-import java.text.SimpleDateFormat;
-import java.util.Calendar;
-import java.util.HashMap;
 import java.util.Scanner;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
@@ -26,8 +23,8 @@ import java.util.logging.Logger;
  * to play a game against.
  * 
  * @author 6266215
- * @version 1.3
- * @since 2015-02-19
+ * @version 1.4
+ * @since 2015-02-21
  */
 public class Server implements Runnable
 {
@@ -50,6 +47,8 @@ public class Server implements Runnable
     private int dirPort;
     /** A mapping of {@link IServerGame} instances to their executing thread. */
     private final ConcurrentHashMap<IServerGame, Thread> games;
+    /** The credits the {@link IServerGame}s can use for paying out. */
+    private int bank;
     
     static final Logger logger = Logger.getLogger(Logger.GLOBAL_LOGGER_NAME);
     
@@ -67,6 +66,7 @@ public class Server implements Runnable
         this.dirServer = "localhost";
         this.dirPort = 55552;
         this.games = new ConcurrentHashMap<>();
+        this.bank = 50000;
     }
     
     /**
@@ -93,6 +93,7 @@ public class Server implements Runnable
         this.dirServer = "localhost";
         this.dirPort = 55552;
         this.games = new ConcurrentHashMap<>();
+        this.bank = 50000;
     }
     
     /**
@@ -161,7 +162,7 @@ public class Server implements Runnable
         try {
             PontoonLogger.setup("server");
         } catch (IOException ex) {
-            serverError("Error setting up logging. Reason\n%s", 
+            serverError("Error setting up logging. Reason%n%s", 
                     ex.getMessage());
         }
         serverMessage("Starting server...");
@@ -173,7 +174,7 @@ public class Server implements Runnable
             serverThread.start();
             serverMessage("Server started.");
         } catch (IOException ioEx) {
-            serverError("Error intiialising server. Reason:\n\t%s", 
+            serverError("Error intiialising server. Reason:%n\t%s", 
                     ioEx.getMessage());
         }
     }
@@ -214,12 +215,33 @@ public class Server implements Runnable
         try {
             PontoonLogger.close();
         } catch (IOException ex) {
-            serverError("Failed to close logger. Reason:\n%s", ex.getMessage());
+            serverError("Failed to close logger. Reason:%n%s", ex.getMessage());
         }
     }
     
     /**
      * Prints information messages to the current {@link Logger} output.
+     * 
+     * @param level The logging {@link Level} to use.
+     * @param msg The message to print as a String. Accepts formatting 
+     * parameters similarly to {@link String#format(java.lang.String, 
+     * java.lang.Object...)}.
+     * @param args Any number of objects to print in the resulting message. For 
+     * objects to print useful data it may require overriding the {@link 
+     * Object#toString()} method.
+     * @since 1.4
+     * @see String#format(java.lang.String, java.lang.Object...)
+     */
+    private synchronized void serverMessage(Level level, String msg, 
+            Object...args)
+    {
+        msg = String.format(msg, args);
+        logger.log(Level.INFO, "{0}", new Object[] {msg});
+    }
+    
+    /**
+     * Prints information messages to the current {@link Logger} output. Logs to
+     *  the {@link Level#INFO} logger level.
      * 
      * @param msg The message to print as a String. Accepts formatting 
      * parameters similarly to {@link String#format(java.lang.String, 
@@ -232,8 +254,7 @@ public class Server implements Runnable
      */
     private synchronized void serverMessage(String msg, Object...args)
     {
-        msg = String.format(msg, args);
-        logger.log(Level.INFO, "{0}", new Object[] {msg});
+        serverMessage(Level.INFO, msg, args);
     }
     
     /**
@@ -368,6 +389,33 @@ public class Server implements Runnable
     }
     
     /**
+     * Gets the free credits this {@link Server} has in its bank.
+     * 
+     * @return Returns the amount of credits available as an int.
+     * @since 1.4
+     */
+    public synchronized int getBank() { return this.bank; }
+    
+    /**
+     * Adjusts the amount of credits this {@link Server} has stored in its bank.
+     *  To remove credits, simply provide a negative value.
+     * 
+     * @param delta The number of credits to adjust the bank balance by as an 
+     * int.
+     * @return Returns true if this {@link Server} has more money in the bank.
+     * @since 1.4
+     */
+    public synchronized boolean adjustBank(int delta)
+    {
+        bank += delta;
+        if (bank <= 0) {
+            serverMessage("The bank has run out of credits!");
+            return false;
+        }
+        return true;
+    }
+    
+    /**
      * Listens for connections in the background and launches new games when 
      * a connection is attempted.
      * 
@@ -385,7 +433,7 @@ public class Server implements Runnable
             try {
                 socket = server.accept();
             } catch (IOException ioEx) {
-                serverError("Server could not connect to client. Reason:\n\t%s",
+                serverError("Server could not connect to client. Reason:%n\t%s",
                         ioEx.getMessage());
                 continue;
             }
@@ -461,7 +509,7 @@ public class Server implements Runnable
             } catch (IOException ioEx) {
                 serverError("Communication error: %s", ioEx.getMessage());
             } catch (ClassNotFoundException cnfEx) {
-                serverError("Unknown object type recieved.\n%s",
+                serverError("Unknown object type recieved.%n%s",
                         cnfEx.getMessage());
             }
         }
@@ -503,13 +551,20 @@ public class Server implements Runnable
                         }
                     }
                     break;
+                case "--no-file":
+                    PontoonLogger.fileLog = false;
+                    break;
+                case "-v":
+                case "--versbose":
+                    PontoonLogger.verbose = true;
+                    break;
                 case "-h":
                 case "--help":
                     // Show a help message.
                     System.out.println(helpMessage());
-                    break;
+                    return;
                 default:
-                    System.err.printf("Unknown argument '%s'\n", args[i]);
+                    System.err.printf("Unknown argument '%s'%n", args[i]);
             }
         }
         
@@ -536,12 +591,15 @@ public class Server implements Runnable
         while (running) {
             line = input.nextLine().trim();
             switch (line) {
+                case "bal":
+                    System.out.printf("Current Bank: %d%n", server.getBank());
+                    break;
                 case "q":
                 case "quit":
                     running = false;
                     break;
                 default:
-                    System.out.printf("Unknown command '%s'.\n", line);
+                    System.out.printf("Unknown command '%s'.%n", line);
             }
         }
         server.kill();
@@ -561,6 +619,8 @@ public class Server implements Runnable
         sb.append("\t--port [port] (-p) - Specifies the port to listen on.\n");
         sb.append("\t--dir-server [hostname:port] - Sets the directory server "
                 + "to connect to. If no port is specific, port 55552 is used.");
+        sb.append("\n\t--no-file - Prevents logging to a file.\n");
+        sb.append("\t--verbose (-v) - Prints extra detail to the console.");
         sb.append("\t--help (-h) - Displays this help message.\n");
         
         return sb.toString();

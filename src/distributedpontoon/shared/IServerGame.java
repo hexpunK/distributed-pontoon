@@ -1,7 +1,7 @@
 package distributedpontoon.shared;
 
 import distributedpontoon.client.IPlayer;
-import distributedpontoon.shared.Deck;
+import distributedpontoon.server.Deck;
 import distributedpontoon.shared.Hand;
 import distributedpontoon.shared.Card;
 import java.io.IOException;

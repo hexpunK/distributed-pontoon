@@ -17,6 +17,8 @@ import java.io.Serializable;
  */
 public class Pair<L, R> implements Serializable
 {
+    /** Serialisation ID. */
+    private static final long serialVersionUID = 1962320306860999949L;
     /** The left value for this {@link Pair}. */
     public final L Left;
     /** The right value for this {@link Pair}. */

@@ -65,7 +65,7 @@ public class ServerPoller implements Runnable
             try {
                 Thread.sleep(POLL_DELAY);
             } catch (InterruptedException ex) {
-                System.err.printf("ServerPoller failed to sleep:\n%s\n",
+                System.err.printf("ServerPoller failed to sleep:%n%s%n",
                         ex.getMessage());
             }
             Set<Triple<String, Integer, Integer>> hosts = 
@@ -92,11 +92,11 @@ public class ServerPoller implements Runnable
                 } catch (UnknownHostException hostEx) {
                     toRemove.add(host);
                     System.out.printf("Host %s does not seem to exist, "
-                            + "removing.\n%s\n", name, hostEx.getMessage());
+                            + "removing.%n%s%n", name, hostEx.getMessage());
                 } catch (IOException ioEx) {
                     toRemove.add(host);
                     System.out.printf("Could not communicate with server %s, "
-                            + "removing.\n%s\n", 
+                            + "removing.%n%s%n", 
                             name, ioEx.getMessage());
                 } finally {
                     // Safely close the polling connections.
@@ -108,7 +108,7 @@ public class ServerPoller implements Runnable
                         if (tmpSocket != null)
                             tmpSocket.close();
                     } catch (IOException ex) {
-                        System.err.printf("Could not close polling socket.\n%s",
+                        System.err.printf("Could not close polling socket.%n%s",
                                 ex.getMessage());
                     }
                 }

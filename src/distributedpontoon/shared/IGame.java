@@ -9,8 +9,8 @@ import java.util.logging.Logger;
  * number of games that have run.
  * 
  * @author 6266215
- * @version 1.4
- * @since 2015-02-19
+ * @version 1.5
+ * @since 2015-02-21
  */
 public abstract class IGame implements Runnable {
     
@@ -72,6 +72,29 @@ public abstract class IGame implements Runnable {
      * stream. Prepends {@link IGame#gameID} to the message to improve the 
      * logging capability.
      * 
+     * @param level The logging {@link Level} to use.
+     * @param msg The message to print as a String. Accepts formatting 
+     * parameters similarly to {@link String#format(java.lang.String, 
+     * java.lang.Object...)}.
+     * @param args Any number of objects to print in the resulting message. For 
+     * objects to print useful data it may require overriding the {@link 
+     * Object#toString()} method.
+     * @since 1.5
+     * @see String#format(java.lang.String, java.lang.Object...)
+     */
+    public final synchronized void gameMessage(Level level, String msg, 
+            Object...args)
+    {
+        String gameIDStr = gameID <= 0 ? "?" : String.valueOf(gameID);
+        msg = String.format(msg, args);
+        logger.log(level, "GAME {0} : {1}", new Object[] {gameIDStr, msg});
+    }
+    
+    /**
+     * Prints information messages to the current {@link System#out} output 
+     * stream. Prepends {@link IGame#gameID} to the message to improve the 
+     * logging capability. Logs the message at the {@link Level#INFO} level.
+     * 
      * @param msg The message to print as a String. Accepts formatting 
      * parameters similarly to {@link String#format(java.lang.String, 
      * java.lang.Object...)}.
@@ -83,9 +106,7 @@ public abstract class IGame implements Runnable {
      */
     public final synchronized void gameMessage(String msg, Object...args)
     {
-        String gameIDStr = gameID <= 0 ? "?" : String.valueOf(gameID);
-        msg = String.format(msg, args);
-        logger.log(Level.INFO, "GAME {0} : {1}", new Object[] {gameIDStr, msg});
+        gameMessage(Level.INFO, msg, args);
     }
     
     /**

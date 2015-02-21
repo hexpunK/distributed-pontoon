@@ -1,5 +1,6 @@
-package distributedpontoon.shared;
+package distributedpontoon.server;
 
+import distributedpontoon.shared.Card;
 import java.util.Collections;
 import java.util.EmptyStackException;
 import java.util.Stack;

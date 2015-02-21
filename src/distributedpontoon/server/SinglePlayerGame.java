@@ -3,8 +3,7 @@ package distributedpontoon.server;
 import distributedpontoon.client.IPlayer;
 import distributedpontoon.shared.Card;
 import distributedpontoon.shared.Card.CardRank;
-import distributedpontoon.shared.Deck;
-import distributedpontoon.shared.Deck.DeckException;
+import distributedpontoon.server.Deck.DeckException;
 import distributedpontoon.shared.Hand;
 import distributedpontoon.shared.IServerGame;
 import distributedpontoon.shared.NetMessage.MessageType;
@@ -30,6 +29,8 @@ public class SinglePlayerGame extends IServerGame
     private ObjectInputStream input;
     /** Output to the client socket. */
     private ObjectOutputStream output;
+    /** The bet for the client playing. */
+    private int bet;
     
     /**
      * Creates a new {@link SinglePlayerGame} with no connected socket. To use 
@@ -44,6 +45,7 @@ public class SinglePlayerGame extends IServerGame
         this.socket = null;
         this.input = null;
         this.output = null;
+        this.bet = 0;
     }
     
     /**
@@ -62,7 +64,7 @@ public class SinglePlayerGame extends IServerGame
         try {
             output = new ObjectOutputStream(this.socket.getOutputStream());
         } catch (IOException ioEx) {
-            gameError("Could not get socket streams. Reason:\n\t%s", 
+            gameError("Could not get socket streams. Reason:%n\t%s", 
                     ioEx.getMessage());
             return;
         }
@@ -74,7 +76,7 @@ public class SinglePlayerGame extends IServerGame
             output.flush();
             gameMessage("Registered player.");
         } catch (IOException ioEx) {
-            gameError("Failed to register player. Reason:\n\t%s", 
+            gameError("Failed to register player. Reason:%n\t%s", 
                     ioEx.getMessage());
         }
     }
@@ -221,6 +223,8 @@ public class SinglePlayerGame extends IServerGame
     @Override
     public void playerWin(int playerID, boolean twentyOne) throws IOException
     {
+        if (twentyOne)
+            Server.getInstance().adjustBank(-(bet/2));
         output.writeObject(MessageType.GAME_RESULT);
         output.writeBoolean(PLAYER_WIN);
         output.writeObject(dealer);
@@ -239,6 +243,7 @@ public class SinglePlayerGame extends IServerGame
     @Override
     public void dealerWin(int playerID) throws IOException
     {
+        Server.getInstance().adjustBank(bet);
         output.writeObject(MessageType.GAME_RESULT);
         output.writeBoolean(DEALER_WIN);
         output.writeObject(dealer);
@@ -300,7 +305,7 @@ public class SinglePlayerGame extends IServerGame
                     reply = (MessageType)input.readObject();
                 } catch (IOException noMsg) {
                     if (noMsg == null || noMsg.getMessage() == null) continue;
-                    gameError("Error retrieving message. Reason:\n%s", 
+                    gameError("Error retrieving message. Reason:%n%s", 
                             noMsg.getMessage());
                     stop();
                     return;
@@ -308,6 +313,8 @@ public class SinglePlayerGame extends IServerGame
                 
                 switch (reply) {
                     case CLIENT_READY:
+                        this.bet = input.readInt();
+                        gameMessage(Level.FINER, "Player set bet to %d", bet);
                         // Initialise the game for a connecting client.
                         output.writeObject(MessageType.GAME_INITIALISE);
                         try {
@@ -331,16 +338,16 @@ public class SinglePlayerGame extends IServerGame
                         PlayerAction action = (PlayerAction)input.readObject();
                         switch (action) {
                             case PLAYER_STICK:
-                                logger.log(Level.FINE, "Player has stuck.");
+                                gameMessage(Level.FINE, "Player has stuck.");
                                 h = (Hand)input.readObject();
                                 checkHand(1, h);
                                 break;
                             case PLAYER_TWIST:
-                                logger.log(Level.FINE, "Player has twisted.");
+                                gameMessage(Level.FINE, "Player has twisted.");
                                 dealCard(1);
                                 break;
                             case PLAYER_BUST:
-                                logger.log(Level.FINE, "Player has bust.");
+                                gameMessage(Level.FINE, "Player has bust.");
                                 input.readObject();
                                 dealerWin(1);
                                 break;
@@ -352,16 +359,16 @@ public class SinglePlayerGame extends IServerGame
                     case CLIENT_DISCONNECT:
                         // Disconnect a client and close the game safely.
                         gameMessage("Player leaving.");
+                        stop();
                         break;
                     default:
-                        gameError("Unknown message sent to game:\n\t%s", reply);
+                        gameError("Unknown message sent to game:%n\t%s", reply);
                 }
             }
         } catch (IOException | ClassNotFoundException ioEx) {
-            gameError("Error handling single player game. Reason:\n%s", 
+            gameError("Error handling single player game. Reason:%n%s", 
                     ioEx.getMessage());
         } finally {
-            stop();
             Server.getInstance().removeGame(gameID);
         }
     }

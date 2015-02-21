@@ -2,7 +2,6 @@ package distributedpontoon.server;
 
 import distributedpontoon.client.IPlayer;
 import distributedpontoon.shared.Card;
-import distributedpontoon.shared.Deck;
 import distributedpontoon.shared.Hand;
 import distributedpontoon.shared.IServerGame;
 import distributedpontoon.shared.NetMessage.MessageType;
@@ -30,6 +29,8 @@ public class MultiPlayerGame extends IServerGame
     public static final int PLAYER_TIMEOUT = 20000;
     /** A mapping of player IDs to their connecting {@link Socket}s. */
     private final ConcurrentHashMap<Integer, Socket> sockets;
+    /** Tracks all the bets of individual players. */
+    private final ConcurrentHashMap<Integer, Integer> bets;
     /** A mapping if player IDs to their {@link Hand}s. */
     private final ConcurrentHashMap<Integer, Hand> hands;
     /** A mapping of player IDs to their ready state for playing the game. */
@@ -50,6 +51,7 @@ public class MultiPlayerGame extends IServerGame
     {
         super();
         this.sockets = new ConcurrentHashMap<>();
+        this.bets = new ConcurrentHashMap<>();
         this.hands = new ConcurrentHashMap<>();
         this.playerReady = new ConcurrentHashMap<>();
         this.outputs = new ConcurrentHashMap<>();
@@ -267,6 +269,9 @@ public class MultiPlayerGame extends IServerGame
     @Override
     public void playerWin(int playerID, boolean twentyOne) throws IOException
     {
+        if (twentyOne)
+            Server.getInstance().adjustBank(-(bets.get(playerID)/2));
+        gameMessage("Player %d won the hand.", playerID);
         ObjectOutputStream output = outputs.get(playerID);
         output.writeObject(MessageType.GAME_RESULT);
         output.writeBoolean(PLAYER_WIN);
@@ -288,6 +293,8 @@ public class MultiPlayerGame extends IServerGame
     @Override
     public void dealerWin(int playerID) throws IOException
     {
+        gameMessage("The dealer won the hand against player %s.", playerID);
+        Server.getInstance().adjustBank(bets.get(playerID));
         ObjectOutputStream output = outputs.get(playerID);
         output.writeObject(MessageType.GAME_RESULT);
         output.writeBoolean(DEALER_WIN);
@@ -393,6 +400,9 @@ public class MultiPlayerGame extends IServerGame
                     reply = (MessageType)in.readObject();
                     if (reply == MessageType.CLIENT_READY) {
                         playerReady.put(plyID, true);
+                        bets.put(plyID, in.readInt());
+                        gameMessage(Level.FINER, "Player %d set bet to %d.", 
+                                plyID, bets.get(plyID));
                         // Initialise the game for a connecting client.
                         out = outputs.get(plyID);
                         out.writeObject(MessageType.GAME_INITIALISE);
@@ -413,7 +423,7 @@ public class MultiPlayerGame extends IServerGame
                     gameError("Player %d timed out!", plyID);
                     removePlayer(plyID);
                 } catch (IOException | ClassNotFoundException ioEx) {
-                    gameError("Error communicating with client %d.\n%s", 
+                    gameError("Error communicating with client %d.%n%s", 
                             plyID, ioEx.getMessage());
                 }
                 if (connectTries.containsKey(plyID))
@@ -450,7 +460,7 @@ public class MultiPlayerGame extends IServerGame
                     } catch (IOException noMsg) {
                         if (noMsg == null || noMsg.getMessage() == null) 
                             continue;
-                        gameError("Error retrieving message. Reason:\n%s", 
+                        gameError("Error retrieving message. Reason:%n%s", 
                             noMsg.getMessage());
                         stop();
                         return;
@@ -468,20 +478,21 @@ public class MultiPlayerGame extends IServerGame
                             PlayerAction action = (PlayerAction)in.readObject();
                             switch (action) {
                                 case PLAYER_STICK:
-                                    logger.log(Level.FINE, 
-                                            "Player {0} has stuck.", plyID);
+                                    gameMessage(Level.FINE, 
+                                            "Player %d has stuck.", plyID);
                                     h = (Hand)in.readObject();
                                     hands.put(plyID, h);
                                     playerReady.put(plyID, true);
                                     break;
                                 case PLAYER_TWIST:
-                                    logger.log(Level.FINE, "Player {0} twists.", 
+                                    gameMessage(Level.FINE, 
+                                            "Player %d twists.", 
                                             plyID);
                                     dealCard(plyID);
                                     break;
                                 case PLAYER_BUST:
-                                    logger.log(Level.FINE, 
-                                            "Player {0} has bust.", plyID);
+                                    gameMessage(Level.FINE, 
+                                            "Player %d has bust.", plyID);
                                     h = (Hand)in.readObject();
                                     hands.put(plyID, h);
                                     playerReady.put(plyID, true);
@@ -497,7 +508,7 @@ public class MultiPlayerGame extends IServerGame
                             removePlayer(plyID);
                             break;
                         default:
-                            gameError("Unknown message sent to game:\n\t%s", 
+                            gameError("Unknown message sent to game:%n\t%s", 
                                     reply);
                     }
                 }
@@ -505,7 +516,7 @@ public class MultiPlayerGame extends IServerGame
                 gameError("Player %d timed out.", plyID);
                 removePlayer(plyID);
             } catch (IOException | ClassNotFoundException ioEx) {
-                gameError("Error handling multi-player game. Reason:\n%s", 
+                gameError("Error handling multi-player game. Reason:%n%s", 
                         ioEx.getMessage());
             }
         }

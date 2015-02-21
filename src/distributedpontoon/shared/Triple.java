@@ -18,6 +18,8 @@ import java.io.Serializable;
  */
 public class Triple<L, M, R> implements Serializable
 {
+    /** Serialisation ID. */
+    private static final long serialVersionUID = -7413119465709004719L;
     /** The first value for this {@link Triple}. */
     public final L One;
     /** The second value for this {@link Triple}. */

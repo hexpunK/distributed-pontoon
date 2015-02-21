@@ -17,7 +17,7 @@ import java.util.ArrayList;
 public class Hand implements Serializable
 {
     /** Serialisation ID. */
-    private static final long serialVersionUID = 1L;
+    private static final long serialVersionUID = -648119333599538473L;
     /** The {@link Card}s held in this Hand. */
     private final ArrayList<Card> cards;
 
@@ -114,7 +114,7 @@ public class Hand implements Serializable
         for (Card c : cards) {
             sb.append("\n").append("\t").append(c).append(",");
         }
-        sb.append(String.format("\nHand value: %d", total()));
+        sb.append(String.format("%nHand value: %d", total()));
 
         return sb.toString();
     }

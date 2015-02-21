@@ -12,6 +12,7 @@ import java.io.ObjectOutputStream;
 import java.net.InetAddress;
 import java.net.Socket;
 import java.net.UnknownHostException;
+import java.util.logging.Level;
 
 /**
  * A client-side representation of a game of Pontoon. Stores the current {@link 
@@ -27,17 +28,17 @@ import java.net.UnknownHostException;
 public class ClientGame extends IClientGame
 {    
     /** The port to connect to. */
-    private int port;
+    private final int port;
     /** The host name or IP address to connect to. */
-    private String serverName;
+    private final String serverName;
+    /** An {@link IPlayer} to request moves from for this {@link ClientGame}. */
+    private final IPlayer player;
     /** The socket to connect to. */
     private Socket connection;
     /** The output stream to write to the server with. */
     private ObjectOutputStream output;
     /** The input stream to read messages from the server with. */
     private ObjectInputStream input;
-    /** An {@link IPlayer} to request moves from for this {@link ClientGame}. */
-    private final IPlayer player;
     /** The {@link Hand} for the player. */
     private Hand hand;
     /** The {@link Hand} for the dealer. */
@@ -198,7 +199,7 @@ public class ClientGame extends IClientGame
     @Override
     public boolean connect()
     {
-        gameMessage("Attempting to connect to game...");
+        gameMessage(Level.FINER, "Attempting to connect to game...");
         try {
             InetAddress address = InetAddress.getByName(serverName);
             connection = new Socket(address, port);
@@ -228,7 +229,7 @@ public class ClientGame extends IClientGame
     @Override
     public void disconnect()
     {
-        gameMessage("Disconnecting from game.");
+        gameMessage(Level.FINER, "Disconnecting from game.");
         this.gameID = -1;
         if (output == null || connection == null)
             return; // Output or connection is already closed.
@@ -236,12 +237,19 @@ public class ClientGame extends IClientGame
         try {
             output.writeObject(MessageType.CLIENT_DISCONNECT);
             output.flush(); 
-            output.close();
-            connection.close();
         } catch (IOException ioEx) {
             gameError(ioEx.getMessage());
         } finally {
-            connection = null;
+            try { 
+                if (output != null)
+                    output.close();
+                if (connection != null)
+                    connection.close();
+            } catch (IOException closeEx) {
+                gameMessage(Level.FINEST, 
+                        "Failed to close connection safely. Reason%n%s", 
+                        closeEx.getMessage());
+            }
         }
     }
     
@@ -258,9 +266,10 @@ public class ClientGame extends IClientGame
         player.adjustBalance(-bet);
         try {
             output.writeObject(MessageType.CLIENT_READY);
+            output.writeInt(bet);
             output.flush();
         } catch (IOException ex) {
-            gameError("Error starting game:\n%s", ex.getMessage());
+            gameError("Error starting game:%n%s", ex.getMessage());
         }
     }
 
@@ -316,18 +325,20 @@ public class ClientGame extends IClientGame
         synchronized(this) {
             hand.addCard(card);
         }
-        gameMessage("Adding card %s.\nHand total %d.", card, hand.total());
+        gameMessage(Level.FINER, "Adding card %s.%nHand total %d.", 
+                card, hand.total());
         for (Card c : hand.getCards()) {
             if ((c.Rank == Card.CardRank.ACE)
                 && c.isAceHigh() 
                 && (hand.total() > 21)) {
-                    gameMessage("Soft total is bust (%d)", hand.total());
+                    gameMessage(Level.FINER, "Soft total is bust (%d)", 
+                            hand.total());
                     c.setAceHigh(false);
             }
         }
         
         if (hand.total() > 21) {
-            gameMessage("Hard total is bust (%d).", hand.total());
+            gameMessage(Level.FINER, "Hard total is bust (%d).", hand.total());
             bust();
         }
     }
@@ -389,7 +400,7 @@ public class ClientGame extends IClientGame
             output = new ObjectOutputStream(connection.getOutputStream());
             input = new ObjectInputStream(connection.getInputStream());
         } catch (IOException ioEx) {
-            gameError("Couldn't get input stream. Reason:\n%s", 
+            gameError("Couldn't get input stream. Reason:%n%s", 
                     ioEx.getMessage());
             disconnect();
             return;
@@ -401,7 +412,7 @@ public class ClientGame extends IClientGame
                 try {
                     msg = (MessageType)input.readObject();
                 } catch (IOException ex) {
-                    gameError("Error retrieving message. Reason:\n%s", 
+                    gameError("Error retrieving message. Reason:%n%s", 
                             ex.getMessage());
                     disconnect();
                     return;
@@ -434,33 +445,30 @@ public class ClientGame extends IClientGame
                         break;
                     case GAME_RESULT:
                         // Give the player their winnings and end the game.
-                        gameMessage("Game over!");
+                        gameMessage(Level.FINE, "Game over!");
                         boolean winner = input.readBoolean();
                         dealerHand = (Hand)input.readObject();
-                        gameMessage("Player hand:\n%s", hand);
-                        gameMessage("Dealer hand:\n%s", dealerHand);
+                        gameMessage(Level.FINE, "Player hand:%n%s", hand);
+                        gameMessage(Level.FINE, "Dealer hand:%n%s", dealerHand);
                         if (winner == PLAYER_WIN) {
                             boolean pontoon = input.readBoolean();
                             if (pontoon) {
-                                gameMessage("Player won hand with a Pontoon!.");
                                 player.adjustBalance((int)(bet*1.5f));
                             } else {
-                                gameMessage("Player won hand.");
                                 player.adjustBalance(bet);
                             }
                             player.playerWin(this, pontoon);
                         } else {
-                            gameMessage("Dealer won hand.");
                             player.dealerWin(this);
                         }
                         player.leaveGame(this);
                         break;
                     default:
                         gameError("Clients do not handle this type of "
-                                + "message (%s)\n", msg);
+                                + "message (%s)%n", msg);
                 }
             } catch (IOException | ClassNotFoundException ioEx) {
-                gameError("Couldn't read server message. Reason:\n%s", 
+                gameError("Couldn't read server message. Reason:%n%s", 
                         ioEx.getMessage());
             }
         }
