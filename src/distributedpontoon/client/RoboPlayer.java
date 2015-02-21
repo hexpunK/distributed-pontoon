@@ -216,15 +216,18 @@ public class RoboPlayer extends IPlayer
      * @param game The {@link IClientGame} to disconnect from.
      */
     @Override
-    public synchronized void leaveGame(IClientGame game)
+    public void leaveGame(IClientGame game)
     {
         if (game == null) return;
         game.disconnect();
         try {
-            Thread t = games.remove(game);
+            Thread t = games.get(game);
             t.join(1000);
         } catch (InterruptedException ex) {
-            System.out.println(ex.getMessage());
+            game.gameError("Failed to stop game safely. Reason%n%s", 
+                    ex.getMessage());
+        } finally {
+            games.remove(game);
         }
         
         if (games.isEmpty())

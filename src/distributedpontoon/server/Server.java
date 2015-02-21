@@ -3,7 +3,9 @@ package distributedpontoon.server;
 import distributedpontoon.directoryservice.DirectoryService;
 import distributedpontoon.shared.IServerGame;
 import distributedpontoon.shared.NetMessage.MessageType;
+import distributedpontoon.shared.Pair;
 import distributedpontoon.shared.PontoonLogger;
+import distributedpontoon.shared.Triple;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
@@ -11,6 +13,7 @@ import java.net.InetAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.net.UnknownHostException;
+import java.util.HashSet;
 import java.util.Scanner;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
@@ -379,10 +382,19 @@ public class Server implements Runnable
     {
         IServerGame game = null;
         for (IServerGame g : games.keySet())
-            if (g.getGameID() == id)
+            if (g.getGameID() == id) {
                 game = g;
-        
+                break;
+            }
+        /* Attempt to shut the game down safely. */
         if (game != null) {
+            Thread t = games.get(game);
+            game.stop();
+            try {
+                t.join(2000);
+            } catch (InterruptedException ex) {
+                serverError("Could not safely join thread for game %d", id);
+            }
             games.remove(game);
             serverMessage("Removed game %d.", id);
         }
@@ -398,21 +410,106 @@ public class Server implements Runnable
     
     /**
      * Adjusts the amount of credits this {@link Server} has stored in its bank.
-     *  To remove credits, simply provide a negative value.
+     *  To remove credits, simply provide a negative value. Synchronises the 
+     * changes in this servers bank with the other servers.
      * 
      * @param delta The number of credits to adjust the bank balance by as an 
      * int.
      * @return Returns true if this {@link Server} has more money in the bank.
-     * @since 1.4
+     * @since 1.5
      */
     public synchronized boolean adjustBank(int delta)
-    {
-        bank += delta;
+    {   
+        return adjustBank(delta, true);
+    }
+    
+    /**
+     * Adjusts the amount of credits this {@link Server} has stored in its bank.
+     *  To remove credits, simply provide a negative value.
+     * 
+     * @param delta The number of credits to adjust the bank balance by as an 
+     * int.
+     * @param sync Set to true to propagate this change to other {@link Server} 
+     * instances the {@link DirectoryService} is aware of.
+     * @return Returns true if this {@link Server} has more money in the bank.
+     * @since 1.4
+     */
+    public synchronized boolean adjustBank(int delta, boolean sync)
+    {   
+        // Synchronise this change to other servers if needed.
+        if (sync)
+            synchroniseBank(delta);
+        
+        bank += delta;        
         if (bank <= 0) {
             serverMessage("The bank has run out of credits!");
             return false;
         }
         return true;
+    }
+    
+    /**
+     * Attempts to synchronise the changes in the bank balance between all the 
+     * currently known {@link Server}s, this is only called when a game attempts
+     *  to run {@link Server#adjustBank(int, boolean)}.
+     * 
+     * @param delta The number of credits to add or remove on the remote server.
+     * @since 1.5
+     */
+    public synchronized void synchroniseBank(int delta)
+    {
+        InetAddress address;
+        Socket socket = null;
+        ObjectOutputStream output = null;
+        ObjectInputStream input = null;
+        Set<Triple<String, Integer, Integer>> servers;
+        Set<Pair<String, Integer>> updated = new HashSet<>();
+        
+        try {
+            address = InetAddress.getByName(dirServer);
+            socket = new Socket(address, dirPort);
+            output = new ObjectOutputStream(socket.getOutputStream());
+            input = new ObjectInputStream(socket.getInputStream());
+            
+            output.writeObject(MessageType.QUERY_SERVERS);
+            output.flush();
+            
+            if ((MessageType)input.readObject() != MessageType.QUERY_SERVERS)
+                return;
+            servers = (Set)input.readObject();
+            for (Triple<String, Integer, Integer> svr : servers) {
+                if (svr.One.equals(this.hostName) && svr.Two == this.port)
+                    continue; // Avoid sending this to yourself.
+                Pair<String, Integer> svrInfo = new Pair<>(svr.One, svr.Two);
+                if (!updated.contains(svrInfo)) {
+                    updated.add(svrInfo); // Keep track of all unique servers.
+                    address = InetAddress.getByName(svrInfo.Left);
+                    socket = new Socket(address, svrInfo.Right);
+                    output = new ObjectOutputStream(socket.getOutputStream());
+                    // Tell the server how much to adjust its bank by.
+                    output.writeObject(MessageType.UPDATE_BANK);
+                    output.writeInt(delta);
+                    output.flush();
+                }
+            }
+        } catch (UnknownHostException hostEx) {
+            serverError("Directory server host '%s' may not exist.", 
+                    dirServer);
+        } catch (IOException | ClassNotFoundException ioEx) {
+            serverError("Could not update other server banks. Reason:%n%s", 
+                    ioEx.getMessage());
+        } finally {
+            try {
+                if (output != null)
+                    output.close();
+                if (input != null)
+                    input.close();
+                if (socket != null)
+                    socket.close();
+            } catch (IOException closeEx) {
+                serverError("Failed to close socket when syncing banks.");
+            }
+        }
     }
     
     /**
@@ -451,6 +548,11 @@ public class Server implements Runnable
                             new ObjectOutputStream(socket.getOutputStream());
                         reply.writeBoolean(true);
                         reply.flush();
+                        break;
+                    case UPDATE_BANK:
+                        int delta = input.readInt();
+                        serverMessage("Remote bank change of %d", delta);
+                        adjustBank(delta, false);
                         break;
                     case CLIENT_JOIN_SP:
                         // Set up single-player games.

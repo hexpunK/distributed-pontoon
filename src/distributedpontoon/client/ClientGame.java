@@ -233,22 +233,23 @@ public class ClientGame extends IClientGame
         if (output == null || connection == null)
             return; // Output or connection is already closed.
         
-        try {
-            output.writeObject(MessageType.CLIENT_DISCONNECT);
-            output.flush(); 
-        } catch (IOException ioEx) {
-            gameError(ioEx.getMessage());
-        } finally {
-            try { 
-                if (output != null)
-                    output.close();
-                if (connection != null && !connection.isClosed())
-                    connection.close();
-            } catch (IOException closeEx) {
-                gameMessage(Level.FINEST, 
-                        "Failed to close connection safely. Reason%n%s", 
-                        closeEx.getMessage());
+        if (!connection.isClosed()) {
+            try {
+                output.writeObject(MessageType.CLIENT_DISCONNECT);
+                output.flush(); 
+            } catch (IOException ioEx) {
+                gameError("Could not tell server to disconnect.");
             }
+        }
+        try { 
+            if (output != null)
+                output.close();
+            if (connection != null && !connection.isClosed())
+                connection.close();
+        } catch (IOException closeEx) {
+            gameMessage(Level.FINEST, 
+                    "Failed to close connection safely. Reason%n%s", 
+                    closeEx.getMessage());
         }
     }
     
@@ -411,8 +412,6 @@ public class ClientGame extends IClientGame
                 try {
                     msg = (MessageType)input.readObject();
                 } catch (IOException ex) {
-                    gameError("Error retrieving message. Reason:%n%s", 
-                            ex.getMessage());
                     disconnect();
                     return;
                 }

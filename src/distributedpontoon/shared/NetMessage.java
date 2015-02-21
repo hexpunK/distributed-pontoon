@@ -60,7 +60,8 @@ public class NetMessage<T> implements Serializable {
         /** Sent to clients at the end of a game to adjust their balance. */
         GAME_RESULT,
         /** Tells the server that the client wishes to disconnect. */
-        CLIENT_DISCONNECT;
+        CLIENT_DISCONNECT,
+        UPDATE_BANK;
     }
     
     /** The type of message being sent as an {@link MessageType} */
