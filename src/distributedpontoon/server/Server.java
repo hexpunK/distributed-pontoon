@@ -366,8 +366,6 @@ public class Server implements Runnable
                     dirServer);
         } catch (IOException ioEx) {
             serverError("Could not unregister game with directory server.");
-        } finally {
-            removeGame(id);
         }
     }
     
@@ -389,7 +387,6 @@ public class Server implements Runnable
         /* Attempt to shut the game down safely. */
         if (game != null) {
             Thread t = games.get(game);
-            game.stop();
             try {
                 t.join(2000);
             } catch (InterruptedException ex) {

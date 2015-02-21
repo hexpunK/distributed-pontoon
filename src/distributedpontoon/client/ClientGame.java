@@ -229,16 +229,16 @@ public class ClientGame extends IClientGame
     @Override
     public void disconnect()
     {
-        gameMessage(Level.FINER, "Disconnecting from game.");
         if (output == null || connection == null)
             return; // Output or connection is already closed.
         
+        gameMessage(Level.FINER, "Disconnecting from game.");
         if (!connection.isClosed()) {
             try {
                 output.writeObject(MessageType.CLIENT_DISCONNECT);
                 output.flush(); 
             } catch (IOException ioEx) {
-                gameError("Could not tell server to disconnect.");
+                gameError("Server has already closed this connection.");
             }
         }
         try { 
@@ -248,9 +248,10 @@ public class ClientGame extends IClientGame
                 connection.close();
         } catch (IOException closeEx) {
             gameMessage(Level.FINEST, 
-                    "Failed to close connection safely. Reason%n%s", 
+                    "Failed to close connection safely. Reason:%n%s", 
                     closeEx.getMessage());
         }
+        this.gameID = -1;
     }
     
     /**

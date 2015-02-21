@@ -270,6 +270,8 @@ public class SinglePlayerGame extends IServerGame
         } catch (IOException ioEx) {
             gameError(ioEx.getMessage());
         }
+        // Remove this game from the server.
+        Server.getInstance().removeGame(gameID);
     }
     
     /**
@@ -365,8 +367,6 @@ public class SinglePlayerGame extends IServerGame
         } catch (IOException | ClassNotFoundException ioEx) {
             gameError("Error handling single player game. Reason:%n%s", 
                     ioEx.getMessage());
-        } finally {
-            Server.getInstance().removeGame(gameID);
         }
     }
 

@@ -74,7 +74,7 @@ public class MultiPlayerGame extends IServerGame
         if (sockets.containsValue(socket)) return;
         if (playerReady.size() > 0 && isAllReady()) {
             gameMessage("Game is already running.");
-            //return;
+            return;
         }
         
         int playerID = ++playerCount;
@@ -314,7 +314,8 @@ public class MultiPlayerGame extends IServerGame
     {
         for (int playerID : sockets.keySet())
             removePlayer(playerID);
-        Server.getInstance().unregisterGame(gameID);
+        // Remove this game from the host server.
+        Server.getInstance().removeGame(gameID);
     }
     
     /**
@@ -432,6 +433,8 @@ public class MultiPlayerGame extends IServerGame
                     connectTries.put(plyID, 1);
             }
         }
+        // Once everybody is ready, remove this from the server browser.
+        Server.getInstance().unregisterGame(gameID);
         
         try {
             dealer.addCard(deck.pullCard());
@@ -458,10 +461,6 @@ public class MultiPlayerGame extends IServerGame
                         in = inputs.get(plyID);
                         reply = (MessageType)in.readObject();
                     } catch (IOException noMsg) {
-                        if (noMsg == null || noMsg.getMessage() == null) 
-                            continue;
-                        gameError("Error retrieving message. Reason:%n%s", 
-                            noMsg.getMessage());
                         stop();
                         return;
                     }

@@ -42,7 +42,8 @@ public class ClientGUI extends JFrame
 {
     /** This GUI should be a singleton, no point running multiple. */
     private static ClientGUI INSTANCE;
-    private final IPlayer player;
+    /** Serialisation ID. */
+    private static final long serialVersionUID = 8546365438564727235L;
     private final JPanel cardPanel, playerCards, dealerCards, buttonPanel, 
             infoPanel;
     private final JButton[] menuButtons;
@@ -52,7 +53,11 @@ public class ClientGUI extends JFrame
     private final HashMap<Card, ImageIcon> cardIcons;
     private final Dimension buttonSize = new Dimension(150, 75);
     
+    /** The {@link IPlayer} this {@link ClientGUI} will interact with. */
+    private final IPlayer player;
+    /** The {@link IClientGame} this {@link ClientGUI} serves. */
     private IClientGame game;
+    /** Has the player taken their turn or not? */
     private boolean turnTaken;
     
     public static final boolean PLAYER = true;
@@ -170,8 +175,8 @@ public class ClientGUI extends JFrame
             this.buttonPanel.add(button);
         for (JButton button : playButtons)
             this.buttonPanel.add(button);
+        this.buttonPanel.add(readyButton);
         
-        this.cardPanel.add(readyButton);
         this.cardPanel.add(gameInfo);
         this.cardPanel.add(playerCards, BorderLayout.SOUTH);
         this.cardPanel.add(dealerCards, BorderLayout.NORTH);
