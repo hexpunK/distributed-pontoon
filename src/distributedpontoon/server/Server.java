@@ -552,10 +552,12 @@ public class Server implements Runnable
                     }
                     break;
                 case "--no-file":
+                    System.out.println("Disabling logging to file...");
                     PontoonLogger.fileLog = false;
                     break;
                 case "-v":
-                case "--versbose":
+                case "--verbose":
+                    System.out.println("Enabling verbose output...");
                     PontoonLogger.verbose = true;
                     break;
                 case "-h":

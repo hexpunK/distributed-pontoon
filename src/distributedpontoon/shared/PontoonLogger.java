@@ -21,10 +21,10 @@ import java.util.logging.Logger;
  */
 public class PontoonLogger 
 {
-    /** The {@link FileHandler} to write the log to file through. */
-    private static FileHandler file;
-    /** The {@link ConsoleHandler} to write to the console with. */
-    private static ConsoleHandler con;
+    /** The {@link Handler} to write the log to file through. */
+    private static Handler file;
+    /** The {@link Handler} to write to the console with. */
+    private static Handler con;
     /** Basic log formatter for the file output. */
     private static Formatter fileFmt;
     /** A {@link Formatter} for the console output. */
@@ -67,7 +67,10 @@ public class PontoonLogger
         
         if (fileLog) {
             file = new FileHandler(fileName, true);
-            file.setLevel(Level.FINE);
+            if (!verbose)
+                file.setLevel(Level.INFO);
+            else 
+                file.setLevel(Level.FINER);
             file.setFormatter(fileFmt);
             logger.addHandler(file);
         }
@@ -121,8 +124,8 @@ public class PontoonLogger
         @Override
         public String format(LogRecord record) 
         {            
-            return String.format("%s - %s%n", 
-                    getDateString(), formatMessage(record));
+            return String.format("%s : %s - %s%n", 
+                    record.getLevel(), getDateString(), formatMessage(record));
         }
 
         @Override

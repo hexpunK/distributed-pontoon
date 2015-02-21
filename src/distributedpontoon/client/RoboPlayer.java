@@ -60,7 +60,7 @@ public class RoboPlayer extends IPlayer
         for (Triple server : servers) {
             String address = (String)server.One;
             int tmpPort = (int)server.Two;
-            if ((int)server.Three == 0) continue; // Ignore MP games.
+            if ((int)server.Three >= 0) continue; // Ignore MP games.
             for (int i = 0; i < Client.MAX_GAMES; i++) {
                 IClientGame game = new ClientGame(this, 50, address, tmpPort);
                 game.setGameID((int)server.Three);

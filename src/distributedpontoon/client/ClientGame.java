@@ -230,7 +230,6 @@ public class ClientGame extends IClientGame
     public void disconnect()
     {
         gameMessage(Level.FINER, "Disconnecting from game.");
-        this.gameID = -1;
         if (output == null || connection == null)
             return; // Output or connection is already closed.
         
@@ -243,7 +242,7 @@ public class ClientGame extends IClientGame
             try { 
                 if (output != null)
                     output.close();
-                if (connection != null)
+                if (connection != null && !connection.isClosed())
                     connection.close();
             } catch (IOException closeEx) {
                 gameMessage(Level.FINEST, 
