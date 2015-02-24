@@ -86,9 +86,23 @@ public class Client
                 case "robo":
                     // Launch a automated client.
                     System.out.println("Starting automated clients...");
-                    player = new RoboPlayer();
-                    player.init();
-                    player.startGame();
+                    System.out.println("How many client do you want?");
+                    String in = input.nextLine();
+                    int num = -1;
+                    try {
+                        num = Integer.parseInt(in);
+                    } catch (NumberFormatException ex) {
+                        System.out.println("You must specify a number.");
+                    }
+                    if (num > 0) {
+                        for (int i = 0; i < num; i++) {
+                            player = new RoboPlayer();
+                            player.init();
+                            player.startGame();
+                        }
+                    } else {
+                        System.out.println("Cannot start less than one robo.");
+                    }
                     break;
                 case "exit":
                 case "quit":

@@ -228,17 +228,15 @@ public class ClientGame extends IClientGame
      */
     @Override
     public void disconnect()
-    {
-        if (output == null || connection == null)
-            return; // Output or connection is already closed.
-        
+    {        
         gameMessage(Level.FINER, "Disconnecting from game.");
         if (!connection.isClosed()) {
             try {
                 output.writeObject(MessageType.CLIENT_DISCONNECT);
                 output.flush(); 
             } catch (IOException ioEx) {
-                gameError("Server has already closed this connection.");
+                gameMessage(Level.FINER, "Server has already closed this "
+                        + "connection.");
             }
         }
         try { 
@@ -251,6 +249,7 @@ public class ClientGame extends IClientGame
                     "Failed to close connection safely. Reason:%n%s", 
                     closeEx.getMessage());
         }
+        player.leaveGame(this);
         this.gameID = -1;
     }
     
@@ -460,7 +459,7 @@ public class ClientGame extends IClientGame
                         } else {
                             player.dealerWin(this);
                         }
-                        player.leaveGame(this);
+                        disconnect();
                         break;
                     default:
                         gameError("Clients do not handle this type of "

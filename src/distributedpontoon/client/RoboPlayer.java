@@ -5,11 +5,9 @@ import distributedpontoon.shared.Hand;
 import distributedpontoon.shared.IClientGame;
 import distributedpontoon.shared.Triple;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.Random;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.logging.Level;
 
 /**
  * An automated Pontoon player. This player will use the same tactic each game, 
@@ -41,7 +39,7 @@ public class RoboPlayer extends IPlayer
         this.threshold = randomiser.nextInt(21);
         this.games = new ConcurrentHashMap<>();
         this.playerIDs = new ConcurrentHashMap<>();
-        this.balance = 300;
+        this.balance = Integer.MAX_VALUE;
     }
     
     /**
@@ -191,7 +189,6 @@ public class RoboPlayer extends IPlayer
             game.gameMessage("Player won! Bet of %d returned.",
                     game.getBet());
         }
-        System.out.printf("Current balance: %d%n", balance);
     }
 
     /**
@@ -206,7 +203,6 @@ public class RoboPlayer extends IPlayer
     { 
         if (game == null) return;
         game.gameMessage("Dealer won. Removed %d credits.", game.getBet());
-        System.out.printf("Current balance: %d%n", balance);
     }
     
     /**
@@ -219,7 +215,6 @@ public class RoboPlayer extends IPlayer
     public void leaveGame(IClientGame game)
     {
         if (game == null) return;
-        game.disconnect();
         try {
             Thread t = games.get(game);
             t.join(1000);

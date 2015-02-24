@@ -127,8 +127,6 @@ public abstract class HumanPlayer extends IPlayer
     @Override
     public void leaveGame(IClientGame game)
     {
-        if (this.game != null)
-            this.game.disconnect();
         if (this.gameThread != null) {
             try {
                 gameThread.join(1000);

@@ -214,16 +214,7 @@ public class GUIPlayer extends HumanPlayer
     @Override
     public void leaveGame(IClientGame game)
     {
-        if (this.game != null && this.game.isConnected())
-            this.game.disconnect();
-        if (this.gameThread != null) {
-            try {
-                gameThread.join(1000);
-            } catch (InterruptedException ex) {
-                System.out.println(ex.getMessage());
-            }
-        }
+        super.leaveGame(game);
         gui.leaveGame();
-        playing = true;
     }
 }
