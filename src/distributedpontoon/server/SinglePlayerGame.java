@@ -129,16 +129,6 @@ public class SinglePlayerGame extends IServerGame
         gameMessage("Player hand:%n%s", h);
         gameMessage("Dealer hand:%n%s", dealer);
         
-        if (plyTotal > 21) {
-            gameMessage("Player has bust with a score of %d!", plyTotal);
-            dealerWin(playerID);
-            return;
-        } else if (dealerBust) {
-            gameMessage("Dealer has bust with a score of %d!", dlrTotal);
-            playerWin(playerID, plyHas2Card);
-            return;
-        }
-        
         boolean dlrHas21 = (dlrTotal == 21);
         boolean dlrHas5Card = (dlrHas21 && dealer.size() == 5);
         boolean dlrHas2Card = (dlrHas21 && dealer.size() == 2);
@@ -168,8 +158,16 @@ public class SinglePlayerGame extends IServerGame
                 playerWin(playerID, false);
             }
         } else {
+            // Check to see if either the player or dealer is bust.
+            if (plyTotal > 21) {
+                gameMessage("Player has bust with a score of %d!", plyTotal);
+                dealerWin(playerID);
+            } else if (dealerBust) {
+                gameMessage("Dealer has bust with a score of %d!", dlrTotal);
+                playerWin(playerID, plyHas2Card);
+            }
             // Any other possible hands.
-            if (plyTotal >= dlrTotal) {
+            else if (plyTotal >= dlrTotal) {
                 gameMessage("Player wins hand! Player: %d\tDealer: %d", 
                     plyTotal, dlrTotal);
                 playerWin(playerID, false);
@@ -307,13 +305,15 @@ public class SinglePlayerGame extends IServerGame
                     try {
                         input = new ObjectInputStream(socket.getInputStream());
                     } catch (IOException ex) { 
-                        System.err.println(ex.getMessage()); 
+                        gameError(ex.getMessage()); 
                     }
                 }
                 
                 try {
                     reply = (MessageType)input.readObject();
                 } catch (IOException noMsg) {
+                    gameError("Couldn't read message from client. Reason:%n%s", 
+                            noMsg.getCause()); 
                     stop();
                     return;
                 }

@@ -165,17 +165,6 @@ public class MultiPlayerGame extends IServerGame
         gameMessage("Player %d hand:%n%s", playerID, h);
         gameMessage("Dealer hand:%n%s", dealer);
         
-        if (plyTotal > 21) {
-            gameMessage("Player %d has bust with a score of %d!", 
-                    playerID, plyTotal);
-            dealerWin(playerID);
-            return;
-        } else if (dealerBust) {
-            gameMessage("Dealer has bust with a score of %d!", dlrTotal);
-            playerWin(playerID, plyHas2Card);
-            return;
-        }
-        
         boolean dlrHas21 = (dlrTotal == 21);
         boolean dlrHas5Card = (dlrHas21 && dealer.size() == 5);
         boolean dlrHas2Card = (dlrHas21 && dealer.size() == 2);
@@ -207,8 +196,16 @@ public class MultiPlayerGame extends IServerGame
                 playerWin(playerID, false);
             }
         } else {
+            if (plyTotal > 21) {
+                gameMessage("Player %d has bust with a score of %d!", 
+                        playerID, plyTotal);
+                dealerWin(playerID);
+            } else if (dealerBust) {
+                gameMessage("Dealer has bust with a score of %d!", dlrTotal);
+                playerWin(playerID, plyHas2Card);
+            }
             // Any other possible hands.
-            if (plyTotal >= dlrTotal) {
+            else if (plyTotal >= dlrTotal) {
                 gameMessage("Player %d wins hand! Player %d: %d\tDealer: %d", 
                     playerID, playerID, plyTotal, dlrTotal);
                 playerWin(playerID, false);
@@ -463,6 +460,10 @@ public class MultiPlayerGame extends IServerGame
                     try {
                         in = inputs.get(plyID);
                         reply = (MessageType)in.readObject();
+                    } catch (SocketTimeoutException timeout) {
+                        removePlayer(plyID);
+                        gameMessage("Player %d has timed out.", plyID);
+                        continue;
                     } catch (IOException noMsg) {
                         stop();
                         return;
