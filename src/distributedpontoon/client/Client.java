@@ -16,7 +16,7 @@ public class Client
 {   
     /** The maximum number of games the {@link RoboPlayer} should play against 
      a single server. */
-    public static int MAX_GAMES = 10;
+    public static int MAX_GAMES = 5;
     
     public static void main(String[] args)
     {        

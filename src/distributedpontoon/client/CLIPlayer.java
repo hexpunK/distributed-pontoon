@@ -229,11 +229,13 @@ public class CLIPlayer extends HumanPlayer
     public void playerWin(IClientGame game, boolean pontoon) 
     {
         if (pontoon) {
-            System.out.printf("You won with a pontoon! Adding %d credits.%n", 
+            game.gameMessage("You won with a pontoon! Adding %d credits.", 
                     game.getBet());
         } else {
-            System.out.printf("You won! Bet of %d returned.%n", game.getBet());
+            game.gameMessage("You won! Bet of %d returned.", game.getBet());
         }
+        game.gameMessage("Your hand:%n%s", game.getHand());
+        game.gameMessage("Dealer hand:%n%s", game.getDealerHand());
         System.out.printf("Current balance: %d%n", balance);
     }
 
@@ -247,7 +249,9 @@ public class CLIPlayer extends HumanPlayer
     @Override
     public void dealerWin(IClientGame game)
     { 
-        System.out.printf("Dealer won. Removing %d credits.%n", game.getBet());
+        game.gameMessage("Dealer won. Removing %d credits.", game.getBet());
+        game.gameMessage("Your hand:%n%s", game.getHand());
+        game.gameMessage("Dealer hand:%n%s", game.getDealerHand());
         System.out.printf("Current balance: %d%n", balance);
     }
 
