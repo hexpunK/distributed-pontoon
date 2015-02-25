@@ -17,6 +17,8 @@ public class Client
     /** The maximum number of games the {@link RoboPlayer} should play against 
      a single server. */
     public static int MAX_GAMES = 5;
+    public static String DIR_HOSTNAME = "localhost";
+    public static int DIR_PORT = 55552;
     
     public static void main(String[] args)
     {        
@@ -41,6 +43,19 @@ public class Client
                 case "--no-file":
                     System.out.println("Disabling logging to file...");
                     PontoonLogger.fileLog = false;
+                    break;
+                case "--dir-server":
+                    String[] parts = args[++i].split(":");
+                    if (parts.length == 1) {
+                        Client.DIR_HOSTNAME = parts[0];
+                    } else {
+                        try {
+                            Client.DIR_HOSTNAME = parts[0];
+                            Client.DIR_PORT = Integer.parseInt(parts[1]);
+                        } catch (NumberFormatException nfEx) {
+                            System.err.println("Port value must be a number.");
+                        }
+                    }
                     break;
                 case "-v":
                 case "--verbose":
@@ -135,6 +150,8 @@ public class Client
         sb.append("\tCommand [options] (Short) - Action\n");
         sb.append("\t--max-games [games] - Specifies the maximum number of "
                 + "times the roboplayer should play on a server.\n");
+        sb.append("\t--dir-server [hostname:port] - Sets the directory server "
+                + "to connect to. If no port is specific, port 55552 is used.");
         sb.append("\t--no-file - Prevents logging to a file.\n");
         sb.append("\t--verbose (-v) - Prints extra detail to the console.");
         sb.append("\t--help (-h) - Displays this help message.\n");

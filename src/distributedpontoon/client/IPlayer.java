@@ -48,8 +48,8 @@ public abstract class IPlayer
     public Set<Triple<String, Integer, Integer>> findServers()
     {
         Set<Triple<String, Integer, Integer>> servers = new HashSet<>();
-        String serverName = "localhost";
-        int directoryPort = 55552;
+        String serverName = Client.DIR_HOSTNAME;
+        int directoryPort = Client.DIR_PORT;
         Socket directorySocket;
         try {
             InetAddress address = InetAddress.getByName(serverName);

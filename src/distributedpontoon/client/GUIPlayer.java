@@ -158,7 +158,7 @@ public class GUIPlayer extends HumanPlayer
         if (pontoon) {
             msg = String.format("You won the hand with a Pontoon!%n"
                         + "Adding %d credits to balance.", 
-                        game.getBet());
+                        (game.getBet()/2));
         } else {
             msg = String.format("You won the hand!%n"
                     + "Returning bet of %d credits.", 
@@ -199,7 +199,7 @@ public class GUIPlayer extends HumanPlayer
                 null, 
                 String.format("Dealer won the hand. Removing %d credits.", 
                         game.getBet()),
-                "Hand Won",
+                "Hand Lost",
                 JOptionPane.INFORMATION_MESSAGE
         );
     }
