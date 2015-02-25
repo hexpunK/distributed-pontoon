@@ -118,26 +118,26 @@ public class SinglePlayerGame extends IServerGame
     public void checkHand(int playerID, Hand h) 
             throws IOException
     {
-        int plyTotal = h.total();
-        
-        if (plyTotal > 21) {
-            gameMessage("Player has bust with a score of %d!", plyTotal);
-            dealerWin(playerID);
-        }
-        
+        int plyTotal = h.total();        
         boolean plyHas21 = (plyTotal == 21);
         boolean plyHas5Card = (plyHas21 && h.size() == 5);
         boolean plyHas2Card = (plyHas21 && h.size() == 2);
         
         boolean dealerBust = !dealerPlay(plyTotal);
         int dlrTotal = dealer.total();
-        if (dealerBust) {
-            gameMessage("Dealer has bust with a score of %d!", dlrTotal);
-            playerWin(playerID, plyHas2Card);
-        }
+        
         gameMessage("Player hand:%n%s", h);
         gameMessage("Dealer hand:%n%s", dealer);
-        if (plyTotal > 21 || dealerBust) return;
+        
+        if (plyTotal > 21) {
+            gameMessage("Player has bust with a score of %d!", plyTotal);
+            dealerWin(playerID);
+            return;
+        } else if (dealerBust) {
+            gameMessage("Dealer has bust with a score of %d!", dlrTotal);
+            playerWin(playerID, plyHas2Card);
+            return;
+        }
         
         boolean dlrHas21 = (dlrTotal == 21);
         boolean dlrHas5Card = (dlrHas21 && dealer.size() == 5);
@@ -195,7 +195,7 @@ public class SinglePlayerGame extends IServerGame
     @Override
     public boolean dealerPlay(int plyScore)
     {
-        while (dealer.total() < 21) {
+        while (dealer.total() <= plyScore) {
             int dlrTotal = dealer.total();
             for (Card c : dealer.getCards()) {
                 if (c.Rank == CardRank.ACE) {
@@ -354,8 +354,6 @@ public class SinglePlayerGame extends IServerGame
                                 dealCard(1);
                                 break;
                             case PLAYER_BUST:
-                                gameMessage(Level.INFO, "Player has bust.");
-                                input.readObject();
                                 h = (Hand)input.readObject();
                                 checkHand(1, h);
                                 break;

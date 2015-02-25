@@ -86,7 +86,7 @@ public class Client
                 case "robo":
                     // Launch a automated client.
                     System.out.println("Starting automated clients...");
-                    System.out.println("How many client do you want?");
+                    System.out.println("How many clients do you want?");
                     String in = input.nextLine();
                     int num = -1;
                     try {

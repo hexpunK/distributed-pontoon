@@ -154,26 +154,27 @@ public class MultiPlayerGame extends IServerGame
     @Override
     public void checkHand(int playerID, Hand h) throws IOException 
     {
-        int plyTotal = h.total();
-        
+        int plyTotal = h.total();        
         boolean plyHas21 = (plyTotal == 21);
         boolean plyHas5Card = (plyHas21 && h.size() == 5);
         boolean plyHas2Card = (plyHas21 && h.size() == 2);
         
-        if (plyTotal > 21) {
-            gameMessage("Player %d is bust!", playerID);
-            dealerWin(playerID);
-        }
-        
         boolean dealerBust = !dealerPlay(plyTotal);
         int dlrTotal = dealer.total();
-        if (dealerBust) {
-            gameMessage("Dealer has bust with a score of %d!", dlrTotal);
-            playerWin(playerID, plyHas2Card);
-        }
+        
         gameMessage("Player %d hand:%n%s", playerID, h);
         gameMessage("Dealer hand:%n%s", dealer);
-        if (plyTotal > 21 || dealerBust) return; // Quit if anybody bust.
+        
+        if (plyTotal > 21) {
+            gameMessage("Player %d has bust with a score of %d!", 
+                    playerID, plyTotal);
+            dealerWin(playerID);
+            return;
+        } else if (dealerBust) {
+            gameMessage("Dealer has bust with a score of %d!", dlrTotal);
+            playerWin(playerID, plyHas2Card);
+            return;
+        }
         
         boolean dlrHas21 = (dlrTotal == 21);
         boolean dlrHas5Card = (dlrHas21 && dealer.size() == 5);
@@ -233,7 +234,7 @@ public class MultiPlayerGame extends IServerGame
     @Override
     public boolean dealerPlay(int plyScore)
     {
-        while (dealer.total() < 21) {
+        while (dealer.total() <= plyScore) {
             int dlrTotal = dealer.total();
             for (Card c : dealer.getCards()) {
                 if (c.Rank == Card.CardRank.ACE) {

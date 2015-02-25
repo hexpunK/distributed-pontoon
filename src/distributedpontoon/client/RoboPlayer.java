@@ -8,6 +8,8 @@ import java.util.ArrayList;
 import java.util.Random;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * An automated Pontoon player. This player will use the same tactic each game, 
@@ -20,12 +22,18 @@ import java.util.concurrent.ConcurrentHashMap;
  */
 public class RoboPlayer extends IPlayer
 {
+    /** The total number of {@link RoboPlayer}s started. */
+    private static int robotCount;
+    /** This {@link RoboPlayer}s unique ID. */
+    private int robotID;
     /** The threshold for twisting for this {@link RoboPlayer}. */
     private final int threshold;
     /** A mapping of {@link IClientGame}s to their executing {@link Thread}s. */
     private final ConcurrentHashMap<IClientGame, Thread> games;
     /** A mapping of {@link IClientGame}s to the player ID for each game. */
     private final ConcurrentHashMap<IClientGame, Integer> playerIDs;
+    /** The global logger to log details from the RoboPlayer. */
+    private Logger logger = Logger.getLogger(Logger.GLOBAL_LOGGER_NAME);
     
     /**
      * Creates a new {@link RoboPlayer} with a randomised threshold value and 
@@ -35,6 +43,9 @@ public class RoboPlayer extends IPlayer
      */
     public RoboPlayer()
     {
+        synchronized(RoboPlayer.class) {
+            this.robotID = ++RoboPlayer.robotCount;
+        }
         Random randomiser = new Random();
         this.threshold = randomiser.nextInt(21);
         this.games = new ConcurrentHashMap<>();
@@ -51,8 +62,10 @@ public class RoboPlayer extends IPlayer
     @Override
     public void init()
     {
-        System.out.printf("RoboPlayer with threshold %d started.%n", threshold);
-        System.out.printf("Joining %d game(s) per server.%n", Client.MAX_GAMES);
+        logger.log(Level.INFO, "ROBO {1} : Threshold {0} - started.", 
+                new Object[]{threshold, robotID});
+        logger.log(Level.INFO, "ROBO {1} : Joining {0} game(s) per server.", 
+                new Object[]{Client.MAX_GAMES, robotID});
         Set<Triple<String, Integer, Integer>> servers = findServers();
         if (servers == null || servers.isEmpty()) return;
         for (Triple server : servers) {

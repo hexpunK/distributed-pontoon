@@ -338,7 +338,7 @@ public class ClientGame extends IClientGame
         }
         
         if (hand.total() > 21) {
-            gameMessage(Level.FINER, "Hard total is bust (%d).", hand.total());
+            gameMessage(Level.INFO, "Hard total is bust (%d).", hand.total());
             bust();
         }
     }
@@ -376,7 +376,7 @@ public class ClientGame extends IClientGame
             output.writeObject(hand);
             output.flush();
         } catch (IOException ioEx) {
-            System.err.println(ioEx.getMessage());
+            gameError(ioEx.getMessage());
         }
     }
     
